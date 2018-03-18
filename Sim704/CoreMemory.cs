@@ -8,25 +8,26 @@ namespace Sim704
 {
     static class CoreMemory
     {
-        public static long[] Mem;
-        public static int AdrMask;
-        public static W36 GetW(int Adr)
+        public static ulong[] Mem;
+        public static uint AdrMask;
+        public static W36 GetW(WA Adr)
         {
-            return new W36() { W = Mem[Adr & AdrMask] };
+            return (W36)Mem[Adr];
         }
-        public static void SetW(int Adr,W36 V)
+        public static void SetW(WA Adr, W36 V)
         {
-            Mem[Adr & AdrMask] = V.W;
+            Mem[Adr] = V;
         }
         public static void Init(int Size)
         {
-            switch(Size)
+            switch (Size)
             {
                 case 4:
                 case 8:
-                case 32:                    
-                    Mem = new long[Size * 1024];
-                    AdrMask = Mem.Length - 1;
+                case 32:
+                    Mem = new ulong[Size * 1024];
+                    AdrMask = (uint)(Mem.Length - 1);
+                    WA.wmask = AdrMask;
                     break;
                 default:
                     throw new InvalidOperationException("Wong Mem Size");

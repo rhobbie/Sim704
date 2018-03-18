@@ -14,15 +14,15 @@ namespace Sim704
             for (int i = 0; i < 4; i++)
                 Lights[i] = false;
         }
-        public static void On(int i)
+        public static void On(uint i)
         {
-            Lights[i-1] = true;
+            Lights[i - 1] = true;
         }
-        public static bool Test(int i)
+        public static int Test(uint i)
         {
-            bool ret = Lights[i-1];
-            Lights[i-1] = false;
-            return ret;
+            int skip = Lights[i - 1] ? 1 : 0;
+            Lights[i - 1] = false;
+            return skip;
         }
     }
 }

@@ -7,11 +7,11 @@ using System.Threading.Tasks;
 
 namespace Sim704
 {
-    class CardReader : IDisposable ,I704dev
+    class CardReader : IDisposable, I704dev
     {
         bool eof; /* end of cards */
-        TapeFile f; 
-        long[] RRecord;
+        TapeFile f;
+        ulong[] RRecord;
         bool ReadActive;
         int PosInRecord;
         bool cardwasread;
@@ -45,9 +45,9 @@ namespace Sim704
             {
                 int r = f.ReadRecord(out bool binary, out byte[] mrecord);
                 if (r < 1)
-                { 
+                {
                     eof = true;
-                    if(cardwasread)
+                    if (cardwasread)
                     {
                         Console.WriteLine("Card Reader hopper empty");
                         CPU704.halt = true;
@@ -67,24 +67,24 @@ namespace Sim704
             ReadActive = true;
             PosInRecord = 0;
         }
-        public int CPY(ref long w) /* Copy */
+        public int CPY(ref ulong w) /* Copy */
         {
             if (!ReadActive)
                 throw new InvalidOperationException("CPY while device not selected");
-            {
-                if (eof)
-                    return 1;
-                if (PosInRecord >= RRecord.Length)
-                    return 2;
 
-                w = CPU704.MQ.W=RRecord[PosInRecord++];
-                return 0;
-            }
+            if (eof)
+                return 1;
+            if (PosInRecord >= RRecord.Length)
+                return 2;
+            w = RRecord[PosInRecord++];
+            CPU704.MQ = (W36)w;
+            return 0;
+
         }
         public void Disconnect() /* Disconnect from Device */
         {
-            ReadActive = false;            
-            RRecord = null;                
+            ReadActive = false;
+            RRecord = null;
         }
         public void Dispose() /* IDisposable-Handling */
         {

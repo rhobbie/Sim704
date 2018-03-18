@@ -218,7 +218,7 @@ namespace Sim704
     }
     public static class CBNConverter /* Converter betwen binary cards in RCD format and CBN card format */
     {
-        public static byte[] ToCBN(long[] mrecord) /* convert card from RCD Format to CBN format */
+        public static byte[] ToCBN(ulong[] mrecord) /* convert card from RCD Format to CBN format */
         {
             byte[] trecord = new byte[160];
             for (int y = 0; y < 12; y++)  /* for all rows */
@@ -231,16 +231,16 @@ namespace Sim704
                     int tpos = x * 2 + y / 6;
                     int tbit = 5 - y % 6;
 
-                    if ((mrecord[mpos] & (1L << mbit)) != 0) /*bit in mrecord set? */
+                    if ((mrecord[mpos] & (1UL << mbit)) != 0) /*bit in mrecord set? */
                         trecord[tpos] |= (byte)(1 << tbit); /* set bit in trecord  */
                 }
             return trecord;
         }
-        public static void FromCBN(byte[] trecord, out long[] mrecord) /* convert  card from CBN Format to RCD format */
+        public static void FromCBN(byte[] trecord, out ulong[] mrecord) /* convert  card from CBN Format to RCD format */
         {
             if (trecord.Length != 160)
                 throw new Exception("wrong record length");
-            mrecord = new long[24];
+            mrecord = new ulong[24];
 
             for (int y = 0; y < 12; y++)  /* for all rows */
                 for (int x = 0; x < 72; x++)  /* for all columns */
@@ -252,7 +252,7 @@ namespace Sim704
                     int tpos = x * 2 + y / 6;
                     int tbit = 5 - y % 6;
                     if ((trecord[tpos] & (1 << tbit)) != 0) /* bit in trecord set ? */
-                        mrecord[mpos] |= 1L << mbit;  /* set bit in mrecord */
+                        mrecord[mpos] |= 1UL << mbit;  /* set bit in mrecord */
                 }
         }
     }

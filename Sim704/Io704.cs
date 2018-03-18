@@ -17,20 +17,20 @@ namespace Sim704
     }
     interface I704dev
     {
-        int CPY(ref long d);
+        int CPY(ref ulong d);
         void Disconnect();
     }
     static class Io704
     {
         /* Device numbers*/
 
-        static int ActiveUnit;
-        static int ActiveSubUnit;
-        public static bool tapecheck;        
-        static CardReader CRD = null;        
+        static uint ActiveUnit;
+        static uint ActiveSubUnit;
+        public static bool tapecheck;
+        static CardReader CRD = null;
         static Tape[] MT = null;
         static I704dev currdev = null;
-        static Config704 Config=null;
+        static Config704 Config = null;
         static Io704()
         {
             XmlSerializer SerializerObj = new XmlSerializer(typeof(Config704));
@@ -40,7 +40,26 @@ namespace Sim704
             SenseSwitches.Init(Config.Switch);
             CoreMemory.Init(Config.MemSize);
         }
-        public static void RDS(int unit) /* Read Select */
+        static void opentape(uint ActiveSubUnit)
+        {
+            if (MT == null)
+            {
+                if (Config.MTn == null)
+                    throw new InvalidOperationException(string.Format("Invalid tape {0} ", ActiveSubUnit));
+                MT = new Tape[Config.MTn.Length];
+            }
+            if (MT.Length < ActiveSubUnit)
+                throw new InvalidOperationException(string.Format("Invalid tape {0}", ActiveSubUnit));
+            if (MT[ActiveSubUnit - 1] == null && Config.MTn[ActiveSubUnit - 1] != null)
+            {
+                MT[ActiveSubUnit - 1] = new Tape(ActiveSubUnit);
+                MT[ActiveSubUnit - 1].MountTape(Config.MTn[ActiveSubUnit - 1]);
+            }
+            if (MT[ActiveSubUnit - 1] == null)
+                throw new InvalidOperationException(string.Format("Invalid tape {0}", ActiveSubUnit));
+        }
+
+        public static void RDS(uint unit) /* Read Select */
         {
             if (currdev != null)
                 currdev.Disconnect();
@@ -51,26 +70,11 @@ namespace Sim704
             {
                 case 8: /* BCD Tape */
                 case 9: /* Bin Tape */
-
                     if (ActiveSubUnit < 1 || ActiveSubUnit > 10)
                         throw new InvalidOperationException(string.Format("Invalid tape %d selected for read", ActiveSubUnit));
-                    if (MT == null)
-                    {
-                        if (Config.MTn == null)
-                            throw new InvalidOperationException(string.Format("Invalid tape %d  selected for read", ActiveSubUnit));
-                        MT = new Tape[Config.MTn.Length];
-                    }
-                    if (MT.Length < ActiveSubUnit)
-                        throw new InvalidOperationException(string.Format("Invalid tape %d  selected for read", ActiveSubUnit));
-                    if (MT[ActiveSubUnit - 1] == null && Config.MTn[ActiveSubUnit - 1] != null)
-                    {
-                        MT[ActiveSubUnit - 1] = new Tape(ActiveSubUnit);
-                        MT[ActiveSubUnit - 1].MountTape(Config.MTn[ActiveSubUnit - 1]);
-                    }
-                    if (MT[ActiveSubUnit - 1] == null)
-                        throw new InvalidOperationException(string.Format("Invalid tape %d selected for read", ActiveSubUnit));
-                    MT[ActiveSubUnit].RDS(ActiveUnit == 9);
-                    currdev = MT[ActiveSubUnit];
+                    opentape(ActiveSubUnit);
+                    MT[ActiveSubUnit - 1].RDS(ActiveUnit == 9);
+                    currdev = MT[ActiveSubUnit - 1];
                     break;
                 case 12: /* Drum */
                     if (ActiveSubUnit < 1 || ActiveSubUnit > 8)
@@ -97,7 +101,7 @@ namespace Sim704
                     throw new InvalidOperationException(string.Format("Invalid device %d selected for read", unit));
             }
         }
-        public static void WRS(int unit) /* Write Select */
+        public static void WRS(uint unit) /* Write Select */
         {
             if (currdev != null)
                 currdev.Disconnect();
@@ -116,23 +120,9 @@ namespace Sim704
                 case 9: /* Bin Tape */
                     if (ActiveSubUnit < 1 || ActiveSubUnit > 10)
                         throw new InvalidOperationException(string.Format("Invalid tape %d selected for write", ActiveSubUnit));
-                    if (MT == null)
-                    {
-                        if (Config.MTn == null)
-                            throw new InvalidOperationException(string.Format("Invalid tape %d  selected for write", ActiveSubUnit));
-                        MT = new Tape[Config.MTn.Length];
-                    }
-                    if (MT.Length < ActiveSubUnit)
-                        throw new InvalidOperationException(string.Format("Invalid tape %d  selected for write", ActiveSubUnit));
-                    if (MT[ActiveSubUnit - 1] == null && Config.MTn[ActiveSubUnit - 1] != null)
-                    {
-                        MT[ActiveSubUnit - 1] = new Tape(ActiveSubUnit);
-                        MT[ActiveSubUnit - 1].MountTape(Config.MTn[ActiveSubUnit - 1]);
-                    }
-                    if (MT[ActiveSubUnit - 1] == null)
-                        throw new InvalidOperationException(string.Format("Invalid tape %d selected for write", ActiveSubUnit));
-                    MT[ActiveSubUnit].WRS(ActiveUnit == 9);
-                    currdev = MT[ActiveSubUnit];
+                    opentape(ActiveSubUnit);
+                    MT[ActiveSubUnit - 1].WRS(ActiveUnit == 9);
+                    currdev = MT[ActiveSubUnit - 1];
                     break;
                 case 12: /* Drum */
                     if (ActiveSubUnit < 1 || ActiveSubUnit > 8)
@@ -156,42 +146,52 @@ namespace Sim704
                     throw new InvalidOperationException(string.Format("Invalid device %d selected for write", unit));
             }
         }
-        public static void BST(int unit) /* Backspace Tape */
+        public static void BST(uint unit) /* Backspace Tape */
         {
+            uint CurrUnit = unit / 16;
+            uint CurrSubUnit = unit - CurrUnit * 16;
             if (currdev != null)
                 currdev.Disconnect();
             currdev = null;
-            if (unit < 1 || unit > 10)
-                throw new InvalidOperationException("invalid tape for backspace");
-            MT[unit - 1].BST();
+            if ((CurrUnit < 8) || (CurrUnit > 9) || (CurrSubUnit < 1 || CurrSubUnit > 10))
+                throw new InvalidOperationException("invalid tape for BST");
+            opentape(CurrSubUnit);
+            MT[CurrSubUnit - 1].BST();
         }
-        public static void WEF(int unit) /* Write End of File */
+        public static void WEF(uint unit) /* Write End of File */
         {
+
+            uint CurrUnit = unit / 16;
+            uint CurrSubUnit = unit - CurrUnit * 16;
             if (currdev != null)
                 currdev.Disconnect();
             currdev = null;
-            if (unit < 1 || unit > 10)
-                throw new InvalidOperationException("invalid tape for Write End of File");
-            MT[unit - 1].WEF();
+            if ((CurrUnit < 8) || (CurrUnit > 9) || (CurrSubUnit < 1 || CurrSubUnit > 10))
+                throw new InvalidOperationException("invalid tape for WEF");
+            opentape(CurrSubUnit);
+            MT[CurrSubUnit - 1].WEF();
         }
-        public static void REW(int unit) /* Rewind */
+        public static void REW(uint unit) /* Rewind */
         {
+            uint CurrUnit = unit / 16;
+            uint CurrSubUnit = unit - CurrUnit * 16;
             if (currdev != null)
                 currdev.Disconnect();
             currdev = null;
-            if (unit < 1 || unit > 10)
+            if ((CurrUnit < 8) || (CurrUnit > 9) || (CurrSubUnit < 1 || CurrSubUnit > 10))
                 throw new InvalidOperationException("invalid tape for Rewind");
-            MT[unit - 1].REW();
+            opentape(CurrSubUnit);
+            MT[CurrSubUnit - 1].REW();
         }
         public static bool ETT() /* End of Tape Test */
         {
             throw new NotImplementedException("ETT");
         }
-        public static void LDA(int address) /* Locate Drum Address */
+        public static void LDA(uint address) /* Locate Drum Address */
         {
             throw new NotImplementedException("LDA");
         }
-        public static int CPY(ref long data) /* Copy and skip */
+        public static int CPY(ref ulong data) /* Copy and skip */
         {
             if (currdev == null)
                 throw new InvalidOperationException("CPY while no device selected");
@@ -199,16 +199,16 @@ namespace Sim704
         }
         public static int RTT() /* Redundancy Tape Test */
         {
-            int ret = tapecheck?1:0;
+            int ret = tapecheck ? 0 : 1;
             tapecheck = false;
             return ret;
         }
-        public static bool PSE(int unit) /* plus sense */
+        public static int PSE(uint unit) /* plus sense */
         {
-            bool ret = false;
-            int CurrUnit = unit / 16;
-            int CurrSubUnit = unit - CurrUnit * 16;
-            switch(CurrUnit)
+            int skip = 0;
+            uint CurrUnit = unit / 16;
+            uint CurrSubUnit = unit - CurrUnit * 16;
+            switch (CurrUnit)
             {
                 case 6: /* Sense Lights */
                     if (CurrSubUnit == 0)
@@ -220,7 +220,7 @@ namespace Sim704
                     break;
                 case 7: /* Sense Switches */
                     if (CurrSubUnit >= 1 && CurrSubUnit <= 6)
-                        ret=SenseSwitches.Test(CurrSubUnit);
+                        skip = SenseSwitches.Test(CurrSubUnit);
                     else
                         throw new InvalidOperationException("invalid Sense Light");
                     break;
@@ -229,152 +229,42 @@ namespace Sim704
                 case 15: /* Printer */
                     throw new NotImplementedException("Printer");
                 default:
-                    throw new InvalidOperationException("invalid device");                    
+                    throw new InvalidOperationException("invalid device");
             }
-            return ret;
+            return skip;
         }
-        public static bool MSE(int unit) /* minus sense */
+        public static int MSE(uint unit) /* minus sense */
         {
-            int CurrUnit = unit / 16;
-            int CurrSubUnit = unit - CurrUnit * 16;
+            int skip = 0;
+
+            uint CurrUnit = unit / 16;
+            uint CurrSubUnit = unit - CurrUnit * 16;
             switch (CurrUnit)
             {
                 case 6: /* Sense Lights */
                     if (CurrSubUnit >= 1 && CurrSubUnit <= 4)
-                        return SenseLights.Test(CurrSubUnit);
+                        skip = SenseLights.Test(CurrSubUnit);
                     else
                         throw new InvalidOperationException("invalid Sense Light");
+                    break;
                 default:
                     throw new InvalidOperationException("invalid device");
-                    
+
             }
+            return skip;
         }
 
-        /* Extended Operations */
-
-        public static void WTV() /* Write CRT */
-        {
-            WRS(16+8); 
-        }
-        public static bool SLF() /* sense lights off */
-        {
-            return PSE(6*16);
-        }
-        public static bool SLN(int unit) /* sense light on */
-        {
-            if (unit < 1 || unit > 4)
-                throw new InvalidOperationException("invalid sense light");
-            return PSE(6*16+unit);
-        }
-        public static bool SLT(int unit) /* sense light test */
-        {
-            if (unit < 1 || unit > 4)
-                throw new InvalidOperationException("invalid sense light");
-            return MSE(6*16 + unit); ;
-        }
-        public static bool SWT(int unit) /* sense switch test */
-        {
-            if (unit < 1 || unit > 6)
-                throw new InvalidOperationException("invalid sense Switch");
-            return PSE(7*16+unit) ;
-        }
-        public static void RTD(int unit) /* Read tape - decimal  */
-        {
-            if (unit < 1 || unit > 10)
-                throw new InvalidOperationException("invalid tape");
-            RDS(8*16 + unit);
-        }
-        public static void WTD(int unit) /* Write tape - decimal  */
-        {
-            if (unit < 1 || unit > 10)
-                throw new InvalidOperationException("invalid tape");
-            WRS(8*16+ unit);
-        }
-        public static void RTB(int unit) /* Read tape - binary  */
-        {
-            if (unit < 1 || unit > 10)
-                throw new InvalidOperationException("invalid tape");
-            RDS(9 * 16 + unit);
-        }
-        public static void WTB(int unit) /* Write tape - binary  */
-        {
-            if (unit < 1 || unit > 10)
-                throw new InvalidOperationException("invalid tape");
-            WRS(9 * 16 + unit);
-        }
-        public static void RDR(int unit) /* Read Drum */
-        {
-            if (unit < 1 || unit > 8)
-                throw new InvalidOperationException("invalid drum");
-            RDS(12*16 + unit);
-        }
-        public static void WDR(int unit) /* Write Drum */
-        {
-            if (unit < 1 || unit > 8)
-                throw new InvalidOperationException("invalid drum");
-            WRS(12 * 16 + unit);
-        }
-        public static void RCD() /* Read Card Reader */
-        {
-            RDS(13*16+1);
-        }
-        public static void WTS(int unit) /* Write tape - simultaneously */
-        {
-            if (unit < 1 || unit > 5)
-                throw new InvalidOperationException("invalid tape");
-            WRS(13 * 16 + unit);
-        }
-        public static void IOD() /* Input-output delay */
-        {
-            WRS(13*16+11);
-        }
-        public static bool SPU(int unit) /* sense punch */
-        {
-            if (unit < 1 || unit > 2)
-                throw new InvalidOperationException("invalid punch exit hub");
-            return PSE(14 * 16 + unit);
-        }
-        public static void WPU() /* Write punch */
-        {
-            WRS(14*16+1);
-        }
-        public static bool SPT() /* sense printer test */
-        {
-            return PSE(15*16);
-        }
-        public static bool SPR(int unit) /* sense printer */
-        {
-            if (unit < 1 || unit > 10)
-                throw new InvalidOperationException("invalid printer exit hub");
-            return PSE(15 * 16 + unit);
-        }
-        public static void RPR() /* Read Printer */
-        {
-            RDS(15 * 16 + 1);
-        }       
-        public static void WPR() /* Write Printer */
-        {
-            WRS(15 * 16+1);
-        }
-
-
-        
-        
-
-
-        
-        
- 
         public static void OnProcessExit(object sender, EventArgs e)
         {
             if (currdev != null)
                 currdev.Disconnect();
             if (CRD != null)
                 CRD.Dispose();
-            if(MT!=null)
+            if (MT != null)
                 for (int i = 0; i < MT.Length; i++)
                     if (MT[i] != null)
                         MT[i].Dispose();
+            Console.WriteLine("finished");
         }
     }
 }

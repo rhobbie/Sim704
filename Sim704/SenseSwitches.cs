@@ -11,13 +11,13 @@ namespace Sim704
         static bool[] Switches = new bool[6];
         public static void Init(bool[] init)
         {
-            if(init!=null)
+            if (init != null)
                 for (int i = 0; i < 6; i++)
                     Switches[i] = init[i];
         }
-        public static bool Test(int unit)
+        public static int Test(uint unit)
         {
-            return Switches[unit - 1];
+            return Switches[unit - 1] ? 1 : 0;
         }
     }
 }

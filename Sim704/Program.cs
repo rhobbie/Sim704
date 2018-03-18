@@ -9,11 +9,11 @@ namespace Sim704
 {
 
 
-   
-    
+
+
     class Program
     {
-        static void WriteFileConfig(Config704 config,string path)
+        static void WriteFileConfig(Config704 config, string path)
         {
             XmlSerializer SerializerObj = new XmlSerializer(typeof(Config704));
             TextWriter WriteFileStream = new StreamWriter(path);
@@ -21,13 +21,14 @@ namespace Sim704
             WriteFileStream.Close();
         }
 
-   
+
+
         static void Main(string[] args)
         {
 
             AppDomain.CurrentDomain.ProcessExit += new EventHandler(Io704.OnProcessExit);
 
-            CPU704.LoadCrd();
+            CPU704.LoadTape();
         }
     }
 }

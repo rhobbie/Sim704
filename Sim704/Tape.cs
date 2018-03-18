@@ -7,17 +7,17 @@ using System.Threading.Tasks;
 
 namespace Sim704
 {
-    class Tape :  IDisposable, I704dev
+    class Tape : IDisposable, I704dev
     {
-        int unit; /* Tape unit 1-10 */
+        uint unit; /* Tape unit 1-10 */
         bool eof; /* end of file reached */
         bool wbin; /* currently writing a binary record */
         TapeFile f; /* for tape file access */
-        long[] RRecord; /* read record */
-        List<long> WRecord; /* write record */
+        ulong[] RRecord; /* read record */
+        List<ulong> WRecord; /* write record */
         bool ReadActive; /* read is active */
         bool WriteActive; /* write is active */
-        
+
         int PosInRecord; /* index in RRecord for next read word */
         void EndRW() /* finish current reading or writing operation */
         {
@@ -45,20 +45,20 @@ namespace Sim704
                 WRecord.Clear();
             }
         }
-        public Tape(int u)
+        public Tape(uint u)
         {
-            unit=u;
+            unit = u;
             f = null;
             ReadActive = false;
             WriteActive = false;
-            
-            WRecord = new List<long>();
+
+            WRecord = new List<ulong>();
         }
         public void MountTape(string file) /* Mount Tape on unit */
         {
-            if(f!=null)
+            if (f != null)
             {
-                throw new InvalidOperationException(string.Format("tape on unit %d already mounted", unit));
+                throw new InvalidOperationException(string.Format("tape on unit {0} already mounted", unit));
             }
             if (file != null)
                 f = new TapeFile(file);
@@ -74,7 +74,7 @@ namespace Sim704
         public void RDS(bool binary) /* Read Select*/
         {
             EndRW();
-            CPU704.MQ.W = 0;
+            CPU704.MQ = (W36)0;
             if (f == null)
                 eof = true;
             else
@@ -86,7 +86,7 @@ namespace Sim704
                 {
                     if (binary != rbinary)
                         Io704.tapecheck = true;
-                    RRecord = new long[(mrecord.Length + 5) / 6];
+                    RRecord = new ulong[(mrecord.Length + 5) / 6];
                     for (int i = 0; i < mrecord.Length; i++)
                     {
                         RRecord[i / 6] <<= 6;
@@ -106,7 +106,7 @@ namespace Sim704
             wbin = binary;
             WriteActive = true;
         }
-        public int CPY(ref long w) /* Copy */
+        public int CPY(ref ulong w) /* Copy */
         {
             int ret = 0;
             if (ReadActive)
@@ -116,10 +116,16 @@ namespace Sim704
                 else if (PosInRecord >= RRecord.Length)
                     ret = 2;
                 else
-                    w = CPU704.MQ.W = RRecord[PosInRecord++];
+                {
+                    w = RRecord[PosInRecord++];
+                    CPU704.MQ = (W36)w;
+                }
             }
             else if (WriteActive)
-                WRecord.Add(CPU704.MQ.W=w);
+            {
+                CPU704.MQ = (W36)w;
+                WRecord.Add(w);
+            }
             else
                 throw new InvalidOperationException("CPY while device not selected");
             return ret;
