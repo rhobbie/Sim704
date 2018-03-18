@@ -1,0 +1,164 @@
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Sim704
+{
+    class Tape :  IDisposable, I704dev
+    {
+        int unit; /* Tape unit 1-10 */
+        bool eof; /* end of file reached */
+        bool wbin; /* currently writing a binary record */
+        TapeFile f; /* for tape file access */
+        long[] RRecord; /* read record */
+        List<long> WRecord; /* write record */
+        bool ReadActive; /* read is active */
+        bool WriteActive; /* write is active */
+        
+        int PosInRecord; /* index in RRecord for next read word */
+        void EndRW() /* finish current reading or writing operation */
+        {
+            if (ReadActive)
+            {
+                RRecord = null;
+                ReadActive = false;
+            }
+            if (WriteActive)
+            {
+                byte[] tr = new byte[WRecord.Count * 6];
+                int i = 0;
+                foreach (long w in WRecord)
+                {
+                    long wt = w;
+                    for (int j = i + 5; j >= i; j--)
+                    {
+                        tr[j] = (byte)(wt & 0x3F);
+                        wt >>= 6;
+                    }
+                    i += 6;
+                }
+                f.WriteRecord(wbin, tr);
+                WriteActive = false;
+                WRecord.Clear();
+            }
+        }
+        public Tape(int u)
+        {
+            unit=u;
+            f = null;
+            ReadActive = false;
+            WriteActive = false;
+            
+            WRecord = new List<long>();
+        }
+        public void MountTape(string file) /* Mount Tape on unit */
+        {
+            if(f!=null)
+            {
+                throw new InvalidOperationException(string.Format("tape on unit %d already mounted", unit));
+            }
+            if (file != null)
+                f = new TapeFile(file);
+            else
+                f = null;
+        }
+        public void UnMountTape(string file) /* Unmount Tape on unit */
+        {
+            EndRW();
+            f.Dispose();
+            f = null;
+        }
+        public void RDS(bool binary) /* Read Select*/
+        {
+            EndRW();
+            CPU704.MQ.W = 0;
+            if (f == null)
+                eof = true;
+            else
+            {
+                int r = f.ReadRecord(out bool rbinary, out byte[] mrecord);
+                if (r < 1)
+                    eof = true;
+                else
+                {
+                    if (binary != rbinary)
+                        Io704.tapecheck = true;
+                    RRecord = new long[(mrecord.Length + 5) / 6];
+                    for (int i = 0; i < mrecord.Length; i++)
+                    {
+                        RRecord[i / 6] <<= 6;
+                        RRecord[i / 6] |= mrecord[i];
+                    }
+                    int remain = RRecord.Length * 6 - mrecord.Length;
+                    for (int i = 0; i < remain; i++)
+                        RRecord[mrecord.Length / 6] <<= 6;
+                }
+            }
+            ReadActive = true;
+            PosInRecord = 0;
+        }
+        public void WRS(bool binary) /* Write Select*/
+        {
+            EndRW(); ;
+            wbin = binary;
+            WriteActive = true;
+        }
+        public int CPY(ref long w) /* Copy */
+        {
+            int ret = 0;
+            if (ReadActive)
+            {
+                if (eof)
+                    ret = 1;
+                else if (PosInRecord >= RRecord.Length)
+                    ret = 2;
+                else
+                    w = CPU704.MQ.W = RRecord[PosInRecord++];
+            }
+            else if (WriteActive)
+                WRecord.Add(CPU704.MQ.W=w);
+            else
+                throw new InvalidOperationException("CPY while device not selected");
+            return ret;
+        }
+        public void BST() /* Backspace */
+        {
+            EndRW();
+            f.BackSpace();
+        }
+        public void WEF() /* Write End of File */
+        {
+            EndRW();
+            f.WriteEOF();
+        }
+        public void REW() /* Rewind */
+        {
+            EndRW();
+            f.Rewind();
+        }
+        public void Disconnect() /* Disconnect from Device */
+        {
+            EndRW();
+        }
+        public void Dispose() /* IDisposable-Handling */
+        {
+            Dispose(true);
+        }
+        protected virtual void Dispose(bool disposing) /* IDisposable-Handling */
+        {
+            if (disposing)
+            {
+                Disconnect();
+                // free managed resources  
+                if (f != null)
+                {
+                    f.Dispose();
+                    f = null;
+                }
+            }
+        }
+    }
+}
