@@ -13,6 +13,10 @@ namespace Sim704
         Stack<long> recpos; /* start positions of records in file */ 
         bool stored;
         int last;
+        public int NumOfRecords()
+        {
+            return recpos.Count;
+        }
         public TapeFile(string name, FileAccess Acc)
         {
             /* P7B Format */

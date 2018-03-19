@@ -260,6 +260,16 @@ namespace Sim704
         {
             return Convert.ToString((long)w, 8).PadLeft(12, '0');
         }
+        public string MQtoString()
+        {
+            StringBuilder sb = new StringBuilder();
+            if (S != 0)
+                sb.Append('-');
+            else
+                sb.Append(' ');
+            sb.Append(M.ToString());
+            return sb.ToString();
+        }
     }
     struct W37
     {
@@ -473,6 +483,24 @@ namespace Sim704
         {
             return Convert.ToString((long)w, 8).PadLeft(13, '0');
         }
+        public string ACToString()
+        {
+            StringBuilder sb = new StringBuilder();
+            uint l = S + Q + PB;
+            while(l<3)
+            { 
+                sb.Append(' ');
+                l++;
+            }
+            if (S != 0)
+                sb.Append('-');
+            if (Q != 0)
+                sb.Append('Q');
+            if (PB != 0)
+                sb.Append('P');
+            sb.Append(M35.ToString());            
+            return sb.ToString();
+        }
     }
     struct WA
     {
@@ -532,58 +560,6 @@ namespace Sim704
             IC = (WA)0;
             CoreMemory.Clear();
         }
-        static public void LoadCrd()
-        {
-
-            Io704.RDS(13 * 16 + 1);
-            Io704.CPY(ref CoreMemory.Mem[0]);
-            Io704.CPY(ref CoreMemory.Mem[1]);
-
-            IC = (WA)0;
-            Go(false);
-        }
-        static public void LoadTape()
-        {
-
-            Io704.RDS(9 * 16 + 1);
-            Io704.CPY(ref CoreMemory.Mem[0]);
-            Io704.CPY(ref CoreMemory.Mem[1]);
-            IC = (WA)0;
-            Go(false);
-        }
-        static public void LoadDrm()
-        {
-            Io704.RDS(12 * 16 + 1);
-            Io704.CPY(ref CoreMemory.Mem[0]);
-            Io704.CPY(ref CoreMemory.Mem[1]);
-            IC = (WA)0;
-            Go(false);
-        }
-        static public void Go(bool step)
-        {
-            do
-            {
-                repeat = false;
-                Step();
-                if (halt)
-                {
-                    Console.WriteLine("HALT at {0}", IC);
-                    string l = Console.ReadLine();
-                    if (l == "g")
-                        halt = false;
-                    else if (l == "x")
-                        break;
-                    if (repeat)
-                        NIC = IC;
-                }
-                else if (step)
-                {
-                    Console.ReadLine();
-                }
-                IC = NIC;
-            }
-            while (true);
-        }
         static void SetX(W3 T, WA A)
         {
             if (0 != (T & 1))
@@ -617,21 +593,27 @@ namespace Sim704
         {
             CoreMemory.SetW((WA)(SR.A - GetX(SR.T)), V);
         }
-        static void WriteAT(W36 SR)
+
+        static W36 SR;
+        static void Debug(string OPC)
         {
-            if (SR.T != 0)
-            {
-                Console.WriteLine(" {0},{1}", (uint)SR.A, (uint)SR.T);
-            }
-            else
-            {
-                Console.WriteLine(" {0}", (uint)SR.A);
-            }
+            Console.Write("0{0} {1} {2}                      {3} {4} {5}  {6}   ", IC, AC.ACToString(), MQ.MQtoString(), X[0], X[1], X[2], SR.MQtoString());
+            Console.WriteLine(OPC);
         }
-        static void WriteATD(W36 SR)
+        static void DebugAT(string OPC)
         {
-            short d = (short)(SR.D << 1);
-            Console.WriteLine(" {0},{1},{2}", (uint)SR.A, (uint)SR.T, d >> 1);
+            Console.Write("0{0} {1} {2}                      {3} {4} {5}  {6}   ", IC, AC.ACToString(), MQ.MQtoString(), X[0], X[1], X[2], SR.MQtoString());
+            Console.Write(OPC);
+            if (SR.T != 0)
+                Console.WriteLine(" {0},{1}", SR.A, SR.T);
+            else
+                Console.WriteLine(" {0}", SR.A);
+        }
+        static void DebugATD(string OPC)
+        {
+            Console.Write("0{0} {1} {2}                      {3} {4} {5}  {6}   ", IC, AC.ACToString(), MQ.MQtoString(), X[0], X[1], X[2], SR.MQtoString());
+            Console.Write(OPC);
+            Console.WriteLine(" {0},{1},{2}", SR.A, SR.T, SR.D);
         }
         static void ADD(W36 SR)
         {
@@ -672,9 +654,8 @@ namespace Sim704
         static public void Step()
         {
 
-            W36 SR = CoreMemory.GetW(IC);
+            SR = CoreMemory.GetW(IC);
 
-            Console.Write("{0} {1} {2} {3} {4} {5} {6} ", IC, SR, AC, MQ, X[0], X[1], X[2]);
             /* check if Type A or Type B instruction */
             uint S = SR.S;
             uint P = (uint)(SR.M >> 33);
@@ -688,8 +669,7 @@ namespace Sim704
                         case 0: /*0*/
                             if (S == 0) /*+000 HTR Hat and Transfer*/
                             {
-                                Console.Write("HTR");
-                                WriteAT(SR);
+                                DebugAT("HTR");
                                 halt = true;
                                 NIC = GetY(SR);
                             }
@@ -702,8 +682,7 @@ namespace Sim704
                         case 16: /*20*/
                             if (S == 0) /*+20 TRA Transfer*/
                             {
-                                Console.Write("TRA");
-                                WriteAT(SR);
+                                DebugAT("TRA");
                                 NIC = GetY(SR);
                             }
                             else
@@ -715,8 +694,7 @@ namespace Sim704
                         case 60: /*74*/
                             if (S == 0) /*+74 TSX Transfer and set index */
                             {
-                                Console.Write("TSX");
-                                WriteAT(SR);
+                                DebugAT("TSX");
                                 SetX(SR.T, (WA)(0U - IC));
                                 NIC = (WA)(uint)SR.A;
                             }
@@ -729,8 +707,7 @@ namespace Sim704
                         case 64: /*100*/
                             if (S == 0) /*+100 TZE Transfer on Zero*/
                             {
-                                Console.Write("TZE");
-                                WriteAT(SR);
+                                DebugAT("TZE");
                                 if (AC.M37 == 0)
                                     NIC = GetY(SR);
                                 else
@@ -738,8 +715,7 @@ namespace Sim704
                             }
                             else   /*+100 TZE Transfer on No Zero*/
                             {
-                                Console.Write("TNZ");
-                                WriteAT(SR);
+                                DebugAT("TNZ");
                                 if (AC.M37 != 0)
                                     NIC = GetY(SR);
                                 else
@@ -754,8 +730,7 @@ namespace Sim704
                             }
                             else /*-120 TMI Transfer on Minus*/
                             {
-                                Console.Write("TZE");
-                                WriteAT(SR);
+                                DebugAT("TZE");
                                 if (AC.S != 0)
                                     NIC = GetY(SR);
                                 else
@@ -765,15 +740,13 @@ namespace Sim704
                         case 208: /*320*/
                             if (S == 0) /*-320 ANS AND to Storage*/
                             {
-                                Console.Write("ANS");
-                                WriteAT(SR);
+                                DebugAT("ANS");
                                 StoreCY(SR, (W36)(AC & LoadCY(SR)));
                                 NIC = (WA)(IC + 1);
                             }
                             else /*-320 ANA AND to Accumulator*/
                             {
-                                Console.Write("ANA");
-                                WriteAT(SR);
+                                DebugAT("ANA");
                                 AC = (W38)(AC & LoadCY(SR));
                                 NIC = (WA)(IC + 1);
                             }
@@ -781,8 +754,7 @@ namespace Sim704
                         case 224: /*340*/
                             if (S == 0) /*+340 CAS Compare Accumulator with Storage*/
                             {
-                                Console.Write("CAS");
-                                WriteAT(SR);
+                                DebugAT("CAS");
                                 W36 tmp = LoadCY(SR);
                                 int skip = 0;
                                 if (0 != AC.S)
@@ -815,8 +787,7 @@ namespace Sim704
                         case 241: /*361*/
                             if (S == 0) /*+361 ACL Add and Carry Logical Word*/
                             {
-                                Console.Write("ACL");
-                                WriteAT(SR);
+                                DebugAT("ACL");
 #if QisZeroAtACL
                                 AC.M37= (W37)(AC.M36 + LoadCY(SR));
                                 if (0 != AC.Q)
@@ -841,8 +812,7 @@ namespace Sim704
                         case 256: /*400*/
                             if (S == 0) /*+400 ADD Add */
                             {
-                                Console.Write("ADD");
-                                WriteAT(SR);
+                                DebugAT("ADD");
                                 ADD(LoadCY(SR));
                                 NIC = (WA)(IC + 1);
                             }
@@ -855,8 +825,7 @@ namespace Sim704
                         case 257: /*401*/
                             if (S == 0) /*+401 ADM Add Magnitude */
                             {
-                                Console.Write("ADM");
-                                WriteAT(SR);
+                                DebugAT("ADM");
                                 ADD((W36)(ulong)(LoadCY(SR).M));
                                 NIC = (WA)(IC + 1);
                             }
@@ -869,8 +838,7 @@ namespace Sim704
                         case 258: /*402 */
                             if (S == 0) /*+402 SUB*/
                             {
-                                Console.Write("SUB");
-                                WriteAT(SR);
+                                DebugAT("SUB");
                                 W36 tmp = LoadCY(SR);
                                 tmp.S = (W1)~tmp.S;
                                 ADD(tmp);
@@ -885,8 +853,7 @@ namespace Sim704
                         case 320: /*500*/
                             if (S == 0) /*+500 CLA Clear and ADD */
                             {
-                                Console.Write("CLA");
-                                WriteAT(SR);
+                                DebugAT("CLA");
                                 W36 tmp = LoadCY(SR);
                                 AC = (W38)0;
                                 AC.M35 = tmp.M;
@@ -895,8 +862,7 @@ namespace Sim704
                             }
                             else /*-500 CAL Clear and ADD logical Word */
                             {
-                                Console.Write("CAL");
-                                WriteAT(SR);
+                                DebugAT("CAL");
                                 AC = (W38)(ulong)LoadCY(SR);
                                 NIC = (WA)(IC + 1);
                             }
@@ -909,8 +875,7 @@ namespace Sim704
                             }
                             else /*-501 ORA Or to Accumulator*/
                             {
-                                Console.Write("ORA");
-                                WriteAT(SR);
+                                DebugAT("ORA");
                                 AC = (W38)(AC | LoadCY(SR));
                                 NIC = (WA)(IC + 1);
                             }
@@ -918,15 +883,13 @@ namespace Sim704
                         case 348: /*534*/
                             if (S == 0) /*+534 LXA Load Index from Address*/
                             {
-                                Console.Write("LXA");
-                                WriteAT(SR);
+                                DebugAT("LXA");
                                 SetX(SR.T, (WA)(uint)CoreMemory.GetW((WA)(uint)SR.A).A);
                                 NIC = (WA)(IC + 1);
                             }
                             else   /* -534 LXD Load Index from Decrement */
                             {
-                                Console.Write("LXD");
-                                WriteAT(SR);
+                                DebugAT("LXD");
                                 SetX(SR.T, (WA)(uint)CoreMemory.GetW((WA)(uint)SR.A).D);
                                 NIC = (WA)(IC + 1);
                             }
@@ -934,8 +897,7 @@ namespace Sim704
                         case 368: /*560*/
                             if (S == 0) /*+560 LDQ Load MQ*/
                             {
-                                Console.Write("LDQ");
-                                WriteAT(SR);
+                                DebugAT("LDQ");
                                 MQ = LoadCY(SR);
                                 NIC = (WA)(IC + 1);
                             }
@@ -954,8 +916,7 @@ namespace Sim704
                             }
                             else /*-600 STQ Store MQ*/
                             {
-                                Console.Write("STQ");
-                                WriteAT(SR);
+                                DebugAT("STQ");
                                 StoreCY(SR, MQ);
                                 NIC = (WA)(IC + 1);
                             }
@@ -963,15 +924,13 @@ namespace Sim704
                         case 386: /*602*/
                             if (S == 0) /*+602 SLW Store Logical Word*/
                             {
-                                Console.Write("SLW");
-                                WriteAT(SR);
+                                DebugAT("SLW");
                                 StoreCY(SR, AC.M36);
                                 NIC = (WA)(IC + 1);
                             }
                             else /*-602 ORS Or to Storage*/
                             {
-                                Console.Write("ORS");
-                                WriteAT(SR);
+                                DebugAT("ORS");
                                 StoreCY(SR, (W36)(AC | LoadCY(SR)));
                                 NIC = (WA)(IC + 1);
                             }
@@ -979,8 +938,7 @@ namespace Sim704
                         case 401:/*621*/
                             if (S == 0) /*+621 STA Store Address*/
                             {
-                                Console.Write("STA");
-                                WriteAT(SR);
+                                DebugAT("STA");
                                 WA Adr = GetY(SR);
                                 W36 tmp = CoreMemory.GetW(Adr);
                                 tmp.A = AC.A;
@@ -994,10 +952,9 @@ namespace Sim704
                             }
                             break;
                         case 402:/*622*/
-                            if (S == 0) /*+622 Store Decrement*/
+                            if (S == 0) /*+622 STD Store Decrement*/
                             {
-                                Console.Write("STD");
-                                WriteAT(SR);
+                                DebugAT("STD");
                                 WA Adr = GetY(SR);
                                 W36 tmp = CoreMemory.GetW(Adr);
                                 tmp.D = AC.D;
@@ -1019,8 +976,7 @@ namespace Sim704
                             else /*-634 SXD Store index in Decrement*/
                             {
 
-                                Console.Write("SXD");
-                                WriteAT(SR);
+                                DebugAT("SXD");
                                 if (SR.T != 0 && SR.T != 1 && SR.T != 2 && SR.T != 4)
                                     throw new Exception("Warning, multiple index registers, see page 26 / SXD");
 
@@ -1034,14 +990,12 @@ namespace Sim704
                         case 448:/*700*/
                             if (S == 0) /*+700 CPY Copy and Skip */
                             {
-                                Console.Write("CPY");
-                                WriteAT(SR);
+                                DebugAT("CPY");
                                 NIC = (WA)(IC + 1 + Io704.CPY(ref CoreMemory.Mem[GetY(SR) & CoreMemory.AdrMask]));
                             }
                             else /*-700 CAD Copy and Add Logical Word */
                             {
-                                Console.Write("CAD");
-                                WriteAT(SR);
+                                DebugAT("CAD");
                                 int skip = Io704.CPY(ref CoreMemory.Mem[GetY(SR) & CoreMemory.AdrMask]);
                                 if (skip == 0)
                                 {
@@ -1058,8 +1012,7 @@ namespace Sim704
                         case 476:/*734*/
                             if (S == 0) /* +734 PAX Place Address in Index */
                             {
-                                Console.Write("PAX");
-                                WriteAT(SR);
+                                DebugAT("PAX");
                                 SetX(SR.T, (WA)(uint)AC.A);
                                 NIC = (WA)(IC + 1);
                             }
@@ -1079,8 +1032,7 @@ namespace Sim704
                             }
                             else /* -754 PXD Place Index in Decrement*/
                             {
-                                Console.Write("PXD");
-                                WriteAT(SR);
+                                DebugAT("PXD");
                                 if (SR.T != 0 && SR.T != 1 && SR.T != 2 && SR.T != 4)
                                     throw new Exception("Warning, multiple index registers, see page 26 / PXD");
                                 AC = (W38)0;
@@ -1097,7 +1049,7 @@ namespace Sim704
                                     case 6:
                                         if (S == 0)/*+760...006 COM Complement Magnitude*/
                                         {
-                                            Console.WriteLine("COM");
+                                            Debug("COM");
                                             AC.M37 = (W37)~AC.M37;
                                             NIC = (WA)(IC + 1);
                                         }
@@ -1115,7 +1067,7 @@ namespace Sim704
                                         }
                                         else /*-760...007 LTM*/
                                         {
-                                            Console.WriteLine("LTM");
+                                            Debug("LTM");
                                             trapping = false;
                                             NIC = (WA)(IC + 1);
                                         }
@@ -1129,7 +1081,7 @@ namespace Sim704
                                         }
                                         else /*-760...012 RTT */
                                         {
-                                            Console.WriteLine("RTT");
+                                            Debug("RTT");
                                             NIC = (WA)(IC + 1 + Io704.RTT());
                                             break;
                                         }
@@ -1144,14 +1096,12 @@ namespace Sim704
                             {
                                 if (S == 0) /* +760 PSE Plus sense*/
                                 {
-                                    Console.Write("PSE");
-                                    WriteAT(SR);
+                                    DebugAT("PSE");
                                     NIC = (WA)(IC + 1 + Io704.PSE(SR.A));
                                 }
                                 else
                                 {
-                                    Console.Write("MSE");
-                                    WriteAT(SR);
+                                    DebugAT("MSE");
                                     NIC = (WA)(IC + 1 + Io704.MSE(SR.A));
                                 }
                             }
@@ -1159,8 +1109,7 @@ namespace Sim704
                         case 497:/*761*/
                             if (S == 0) /* +761 NOP No Operation*/
                             {
-                                Console.Write("NOP");
-                                WriteAT(SR);
+                                DebugAT("NOP");
                                 NIC = (WA)(IC + 1);
                             }
                             else
@@ -1173,8 +1122,7 @@ namespace Sim704
                         case 498:/*762*/
                             if (S == 0) /* +762 RDS Read Select */
                             {
-                                Console.Write("RDS");
-                                WriteAT(SR);
+                                DebugAT("RDS");
                                 Io704.RDS(GetY(SR));
                                 NIC = (WA)(IC + 1);
                             }
@@ -1188,8 +1136,7 @@ namespace Sim704
                         case 499:
                             if (S == 0) /* +763 LLS Long Left Shift */
                             {
-                                Console.Write("LLS");
-                                WriteAT(SR);
+                                DebugAT("LLS");
                                 uint shift = GetY(SR) % 256;
                                 for (uint i = 0; i < shift; i++)
                                 {
@@ -1204,8 +1151,7 @@ namespace Sim704
                             }
                             else/* -763 LGL Logical Left */
                             {
-                                Console.Write("LGL");
-                                WriteAT(SR);
+                                DebugAT("LGL");
                                 uint shift = GetY(SR) % 256;
                                 for (uint i = 0; i < shift; i++)
                                 {
@@ -1220,8 +1166,7 @@ namespace Sim704
                         case 501: /*765*/
                             if (S == 0) /*+765 LRS Long Right Shift*/
                             {
-                                Console.Write("LRS");
-                                WriteAT(SR);
+                                DebugAT("LRS");
                                 uint shift = GetY(SR) % 256;
                                 for (uint i = 0; i < shift; i++)
                                 {
@@ -1239,10 +1184,9 @@ namespace Sim704
                             }
                             break;
                         case 502: /*766*/
-                            if (S == 0) /*+766 WTB Write Tape Binary*/
+                            if (S == 0) /*+766 WRS Write Select*/
                             {
-                                Console.Write("WTB");
-                                WriteAT(SR);
+                                DebugAT("WRS");
                                 Io704.WRS(GetY(SR));
                                 NIC = (WA)(IC + 1);
                             }
@@ -1255,8 +1199,7 @@ namespace Sim704
                         case 503: /*767*/
                             if (S == 0) /*+767*/
                             {
-                                Console.Write("ALS");
-                                WriteAT(SR);
+                                DebugAT("ALS");
                                 uint shift = GetY(SR) % 256;
                                 for (uint i = 0; i < shift; i++)
                                 {
@@ -1275,8 +1218,7 @@ namespace Sim704
                         case 505: /*771*/
                             if (S == 0) /*+771 Accumulator Right Shift*/
                             {
-                                Console.Write("ARS");
-                                WriteAT(SR);
+                                DebugAT("ARS");
                                 uint shift = GetY(SR) % 256;
                                 for (uint i = 0; i < shift; i++)
                                     AC.M37 = (W37)(AC.M37 >> 1);
@@ -1291,8 +1233,7 @@ namespace Sim704
                         case 504: /*770*/
                             if (S == 0) /*+770 WEF Write End of File*/
                             {
-                                Console.Write("WEF");
-                                WriteAT(SR);
+                                DebugAT("WEF");
                                 Io704.WEF(GetY(SR));
                                 NIC = (WA)(IC + 1);
                             }
@@ -1305,8 +1246,7 @@ namespace Sim704
                         case 506: /*772*/
                             if (S == 0) /*+772 REW Rewind Tape*/
                             {
-                                Console.Write("REW");
-                                WriteAT(SR);
+                                DebugAT("REW");
                                 Io704.REW(GetY(SR));
                                 NIC = (WA)(IC + 1);
                             }
@@ -1325,8 +1265,7 @@ namespace Sim704
                 case 1:
                     if (S == 0) /* +1 : TXI Transfer with index incremeted */
                     {
-                        Console.Write("TXI");
-                        WriteATD(SR);
+                        DebugATD("TXI");
                         SetX(SR.T, (WA)(GetX(SR.T) + SR.D));
                         NIC = (WA)(uint)SR.A;
                     }
@@ -1339,8 +1278,7 @@ namespace Sim704
                 case 2:
                     if (S == 0) /* +2 : TIX  Transfer on Index  */
                     {
-                        Console.Write("TIX");
-                        WriteATD(SR);
+                        DebugATD("TIX");
                         WA X = GetX(SR.T);
                         if (X > (WA)(uint)SR.D)
                         {
@@ -1352,8 +1290,7 @@ namespace Sim704
                     }
                     else /* -2 : TNX  Transfer on No Index  */
                     {
-                        Console.Write("TNX");
-                        WriteATD(SR);
+                        DebugATD("TNX");
                         WA X = GetX(SR.T);
                         if (X <= (WA)(uint)SR.D)
                             NIC = (WA)(uint)SR.A;
@@ -1367,8 +1304,7 @@ namespace Sim704
                 case 3:
                     if (S == 0) /* +3 : TXH */
                     {
-                        Console.Write("TXH");
-                        WriteATD(SR);
+                        DebugATD("TXH");
                         if (GetX(SR.T) > (WA)(uint)SR.D)
                             NIC = (WA)(uint)SR.A;
                         else
@@ -1376,8 +1312,7 @@ namespace Sim704
                     }
                     else /* -3 : TXL */
                     {
-                        Console.Write("TXL");
-                        WriteATD(SR);
+                        DebugATD("TXL");
                         if (GetX(SR.T) <= (WA)(uint)SR.D)
                             NIC = (WA)(uint)SR.A;
                         else
@@ -1389,6 +1324,60 @@ namespace Sim704
                     halt = true;
                     break;
             }
+        }
+
+        static public void LoadCrd()
+        {
+
+            Io704.RDS(13 * 16 + 1);
+            Io704.CPY(ref CoreMemory.Mem[0]);
+            Io704.CPY(ref CoreMemory.Mem[1]);
+
+            IC = (WA)0;
+            Go(false);
+        }
+        static public void LoadTape()
+        {
+
+            Io704.RDS(9 * 16 + 1);
+            Io704.CPY(ref CoreMemory.Mem[0]);
+            Io704.CPY(ref CoreMemory.Mem[1]);
+            IC = (WA)0;
+            Go(false);
+        }
+        static public void LoadDrm()
+        {
+            Io704.RDS(12 * 16 + 1);
+            Io704.CPY(ref CoreMemory.Mem[0]);
+            Io704.CPY(ref CoreMemory.Mem[1]);
+            IC = (WA)0;
+            Go(false);
+        }
+        static public void Go(bool step)
+        {
+            MQ = new W36();
+            do
+            {
+                repeat = false;
+                Step();
+                if (halt)
+                {
+                    Console.WriteLine("HALT at {0}", IC);
+                    string l = Console.ReadLine();
+                    if (l == "g")
+                        halt = false;
+                    else if (l == "x")
+                        break;
+                    if (repeat)
+                        NIC = IC;
+                }
+                else if (step)
+                {
+                    Console.ReadLine();
+                }
+                IC = NIC;
+            }
+            while (true);
         }
 
     }

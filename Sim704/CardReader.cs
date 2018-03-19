@@ -57,6 +57,7 @@ namespace Sim704
                 }
                 else
                 {
+                    Console.WriteLine("Card {0} read", f.NumOfRecords());
                     cardwasread = true;
                     if (!binary || mrecord.Length != 160)
                         throw new InvalidDataException("invalid cbn record on Card Reader");

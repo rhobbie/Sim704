@@ -41,6 +41,7 @@ namespace Sim704
                     i += 6;
                 }
                 f.WriteRecord(wbin, tr);
+                Console.WriteLine("Tape {0} record {1} with length {2} written", unit, f.NumOfRecords(), tr.Length);                
                 WriteActive = false;
                 WRecord.Clear();
             }
@@ -80,10 +81,15 @@ namespace Sim704
             else
             {
                 int r = f.ReadRecord(out bool rbinary, out byte[] mrecord);
+                if(r==-1)
+                    Console.WriteLine("Tape {0} EOM",unit);
+                else if(r==0)
+                    Console.WriteLine("Tape {0} record {1} with EOF read", unit, f.NumOfRecords());
                 if (r < 1)
                     eof = true;
                 else
                 {
+                    Console.WriteLine("Tape {0} record {1} with length {2} read", unit,f.NumOfRecords(), mrecord.Length);
                     if (binary != rbinary)
                         Io704.tapecheck = true;
                     RRecord = new ulong[(mrecord.Length + 5) / 6];
@@ -95,6 +101,7 @@ namespace Sim704
                     int remain = RRecord.Length * 6 - mrecord.Length;
                     for (int i = 0; i < remain; i++)
                         RRecord[mrecord.Length / 6] <<= 6;
+                    
                 }
             }
             ReadActive = true;
@@ -133,16 +140,19 @@ namespace Sim704
         public void BST() /* Backspace */
         {
             EndRW();
+            Console.WriteLine("Tape {0} Backspace", unit);
             f.BackSpace();
         }
         public void WEF() /* Write End of File */
         {
             EndRW();
+            Console.WriteLine("Tape {0} Write EOF", unit);
             f.WriteEOF();
         }
         public void REW() /* Rewind */
         {
             EndRW();
+            Console.WriteLine("Tape {0} rewind", unit);
             f.Rewind();
         }
         public void Disconnect() /* Disconnect from Device */
