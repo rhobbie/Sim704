@@ -10,14 +10,6 @@ namespace Sim704
     {
         public static ulong[] Mem;
         public static uint AdrMask;
-        public static W36 GetW(WA Adr)
-        {
-            return (W36)Mem[Adr];
-        }
-        public static void SetW(WA Adr, W36 V)
-        {
-            Mem[Adr] = V;
-        }
         public static void Init(int Size)
         {
             switch (Size)
@@ -27,11 +19,19 @@ namespace Sim704
                 case 32:
                     Mem = new ulong[Size * 1024];
                     AdrMask = (uint)(Mem.Length - 1);
-                    WA.wmask = AdrMask;
+                    WA.SetMask(AdrMask);
                     break;
                 default:
                     throw new InvalidOperationException("Wong Mem Size");
             }
+        }
+        public static W36 C(WA Y)
+        {
+            return (W36)Mem[Y];
+        }
+        public static void C(WA Y, W36 V)
+        {
+            Mem[Y] = V;
         }
         public static void Clear()
         {

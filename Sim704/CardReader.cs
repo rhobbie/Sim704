@@ -49,7 +49,9 @@ namespace Sim704
                     eof = true;
                     if (cardwasread)
                     {
-                        Console.WriteLine("Card Reader hopper empty");
+                        if (Io704.Config.logIO)
+                            Console.WriteLine("Card Reader hopper empty");                        
+                            Console.Error.WriteLine("Card Reader hopper empty");
                         CPU704.halt = true;
                         CPU704.repeat = true;
                         cardwasread = false;
@@ -57,7 +59,8 @@ namespace Sim704
                 }
                 else
                 {
-                    Console.WriteLine("Card {0} read", f.NumOfRecords());
+                    if (Io704.Config.logIO)
+                        Console.WriteLine("Card {0} read", f.NumOfRecords());
                     cardwasread = true;
                     if (!binary || mrecord.Length != 160)
                         throw new InvalidDataException("invalid cbn record on Card Reader");
@@ -74,11 +77,24 @@ namespace Sim704
                 throw new InvalidOperationException("CPY while device not selected");
 
             if (eof)
+            {
+                if (Io704.Config.logIO)
+                    
+                Console.WriteLine("Cardreader EOF");
                 return 1;
+            }                
             if (PosInRecord >= RRecord.Length)
+            {
+                if (Io704.Config.logIO)
+                    
+                Console.WriteLine("Cardreader EOR");
                 return 2;
+            }
             w = RRecord[PosInRecord++];
-            CPU704.MQ = (W36)w;
+            ALU.MQ = (W36)w;
+            if (Io704.Config.logIO)
+                
+            Console.WriteLine("Cardreader {0}", ALU.MQ);
             return 0;
 
         }

@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-
+using System.IO;
 namespace Sim704
 {
     struct W1
@@ -17,23 +14,11 @@ namespace Sim704
         {
             w = value & wmask;
         }
-        public W1(ulong value)
-        {
-            w = (uint)value & wmask;
-        }
         public static implicit operator uint(W1 d)
         {
             return d.w;
         }
-        public static implicit operator ulong(W1 d)
-        {
-            return d.w;
-        }
         public static explicit operator W1(uint d)
-        {
-            return new W1(d);
-        }
-        public static explicit operator W1(ulong d)
         {
             return new W1(d);
         }
@@ -53,15 +38,7 @@ namespace Sim704
         {
             w = value & wmask;
         }
-        public W3(ulong value)
-        {
-            w = (uint)value & wmask;
-        }
         public static implicit operator uint(W3 d)
-        {
-            return d.w;
-        }
-        public static implicit operator ulong(W3 d)
         {
             return d.w;
         }
@@ -69,13 +46,58 @@ namespace Sim704
         {
             return new W3(d);
         }
-        public static explicit operator W3(ulong d)
-        {
-            return new W3(d);
-        }
         public override string ToString()
         {
             return Convert.ToString(w);
+        }
+    }
+    struct W8
+    {
+        const int wlen = 8; /* Word length */
+        const uint wmask = (1U << wlen) - 1U; /* mask for word */
+
+        uint w; /* 8 bit Word stored in 32 bit uint*/
+
+        public W8(uint value)
+        {
+            w = value & wmask;
+        }
+        public static implicit operator uint(W8 d)
+        {
+            return d.w;
+        }
+        public static explicit operator W8(uint d)
+        {
+            return new W8(d);
+        }
+        public override string ToString()
+        {
+            return Convert.ToString(w, 8).PadLeft(3, '0');
+        }
+    }
+    struct W10
+    {
+        const int wlen = 10; /* Word length */
+        const uint wmask = (1U << wlen) - 1U; /* mask for word */
+
+        uint w; /* 10 bit Word stored in 32 bit uint*/
+
+        public W10(uint value)
+        {
+            w = value & wmask;
+        }
+
+        public static implicit operator uint(W10 d)
+        {
+            return d.w;
+        }
+        public static explicit operator W10(uint d)
+        {
+            return new W10(d);
+        }
+        public override string ToString()
+        {
+            return Convert.ToString(w, 8).PadLeft(4, '0');
         }
     }
     struct W15
@@ -89,15 +111,7 @@ namespace Sim704
         {
             w = value & wmask;
         }
-        public W15(ulong value)
-        {
-            w = (uint)value & wmask;
-        }
         public static implicit operator uint(W15 d)
-        {
-            return d.w;
-        }
-        public static implicit operator ulong(W15 d)
         {
             return d.w;
         }
@@ -105,13 +119,57 @@ namespace Sim704
         {
             return new W15(d);
         }
-        public static explicit operator W15(ulong d)
-        {
-            return new W15(d);
-        }
         public override string ToString()
         {
             return Convert.ToString(w, 8).PadLeft(5, '0');
+        }
+    }
+    struct W18
+    {
+        const int wlen = 18; /* Word length */
+        const uint wmask = (1U << wlen) - 1U; /* mask for word */
+
+        uint w; /* 18 bit Word stored in 32 bit uint*/
+
+        public W18(uint value)
+        {
+            w = value & wmask;
+        }
+        public static implicit operator uint(W18 d)
+        {
+            return d.w;
+        }
+        public static explicit operator W18(uint d)
+        {
+            return new W18(d);
+        }
+        public override string ToString()
+        {
+            return Convert.ToString(w, 8).PadLeft(6, '0');
+        }
+    }
+    struct W27
+    {
+        const int wlen = 27; /* Word length */
+        const uint wmask = (1U << wlen) - 1U; /* mask for word */
+
+        uint w; /* 27 bit Word stored in 32 bit uint*/
+
+        public W27(uint value)
+        {
+            w = value & wmask;
+        }
+        public static implicit operator uint(W27 d)
+        {
+            return d.w;
+        }
+        public static explicit operator W27(uint d)
+        {
+            return new W27(d);
+        }
+        public override string ToString()
+        {
+            return Convert.ToString(w, 8).PadLeft(9, '0');
         }
     }
     struct W35
@@ -147,6 +205,11 @@ namespace Sim704
         const int wlen = alen + tlen + dlen + plen; /* Word length */
         const int slen = 1; /* Sign length */
         const int mlen = wlen - slen; /* Magnitude length */
+        const int b1len = 1; /* lenght of Bit 1 */
+        const int llen = 18; /* length of left half */
+        const int flen = 27; /* lenght of the fraction */
+        const int clen = 8; /* lenght of the characteristic */
+        const int b9len = 1; /* lenght of Bit 9 */
 
         const int apos = 0; /* bit pos for Adress*/
         const int tpos = alen; /* bit pos for Tag*/
@@ -154,6 +217,11 @@ namespace Sim704
         const int ppos = dpos + dlen; /* bit pos for Prefix*/
         const int mpos = 0;           /* bit pos for Magniude */
         const int spos = wlen - slen; /* bit pos for Sign */
+        const int b1pos = spos - b1len; /* bit pos for Bit 1 */
+        const int lpos = 18; /* bit pos of left half */
+        const int fpos = 0;   /* bit pos  of the fraction */
+        const int cpos = flen; /* bit pos of the characteristic */
+        const int b9pos = cpos - b9len; /* bit pos for Bit 9 */
 
         const ulong a0mask = (1UL << alen) - 1UL; /* mask for Adress at bit 0*/
         const ulong t0mask = (1UL << tlen) - 1UL; /* mask for Tag at bit 0*/
@@ -162,6 +230,11 @@ namespace Sim704
         const ulong wmask = (1UL << wlen) - 1UL;  /* mask for Word */
         const ulong m0mask = (1UL << mlen) - 1UL; /* mask for Magnitude at bit 0*/
         const ulong s0mask = (1UL << slen) - 1UL; /* mask for Sign at bit 0 */
+        const ulong b10mask = (1UL << b1len) - 1UL; /* mask for Bit 1 at bit 0 */
+        const ulong l0mask = (1UL << llen) - 1UL;  /* mask for left half at bit 0*/
+        const ulong f0mask = (1UL << flen) - 1UL; /* mask for fraction at bit 0 */
+        const ulong c0mask = (1UL << clen) - 1UL; /* mask for characteristic at bit 0  */
+        const ulong b90mask = (1UL << b9len) - 1UL; /* mask for Bit 9 at bit 0 */
 
         const ulong awmask = a0mask << apos; /* mask for Adress in word */
         const ulong twmask = t0mask << tpos; /* mask for Tag in word */
@@ -169,6 +242,11 @@ namespace Sim704
         const ulong pwmask = p0mask << ppos; /* mask for Prefix in word */
         const ulong mwmask = m0mask << mpos; /* mask for Magnitude in word  */
         const ulong swmask = s0mask << spos; /* mask for Sign in word */
+        const ulong b1wmask = b10mask << b1pos; /* mask for Bit 1 in word */
+        const ulong lwmask = l0mask << lpos; /* mask for left half in word */
+        const ulong fwmask = f0mask << fpos; /* mask for fraction in word */
+        const ulong cwmask = c0mask << cpos; /* mask for characteristic int word */
+        const ulong b9wmask = b90mask << b9pos; /* mask for Bit 9 in word */
 
         const ulong iawmask = (wmask ^ awmask); /* inv mask for Adress in word */
         const ulong itwmask = (wmask ^ twmask); /* inv mask for Tag in word  */
@@ -176,6 +254,12 @@ namespace Sim704
         const ulong ipwmask = (wmask ^ pwmask); /* inv mask for Prefix in word  */
         const ulong imwmask = (wmask ^ mwmask); /* inv mask for Magnitude in word  */
         const ulong iswmask = (wmask ^ swmask); /* inv mask for Sign in word  */
+        const ulong ib1wmask = (wmask ^ b1wmask); /* inv mask for Bit 1 in word */
+        const ulong ilwmask = (wmask ^ lwmask); /* inv mask for left half in word  */
+        const ulong ifwmask = (wmask ^ fwmask); /* inv mask for fraction in word  */
+        const ulong icwmask = (wmask ^ cwmask); /* inv mask for characteristic in word  */
+        const ulong ib9wmask = (wmask ^ b9wmask); /* inv mask for Bit 1 in word */
+
         ulong w; /* 36 bit Word stored in 64 bit ulong*/
 
         public W36(ulong value)
@@ -256,6 +340,63 @@ namespace Sim704
                 w = (w & iswmask) | ((ulong)value << spos);
             }
         }
+        public W1 B1  /* Bit1 1 Bit*/
+        {
+            get
+            {
+                return (W1)(w >> b1pos);
+            }
+            set
+            {
+                w = (w & ib1wmask) | ((ulong)value << b1pos);
+            }
+        }
+
+        public W18 L  /* left half */
+        {
+            get
+            {
+                return (W18)(w >> lpos);
+            }
+            set
+            {
+                w = (w & ilwmask) | ((ulong)value << lpos);
+            }
+        }
+        public W27 F  /* Fraction 27 bit */
+        {
+            get
+            {
+                return (W27)w;
+            }
+            set
+            {
+                w = (w & ifwmask) | value;
+            }
+        }
+        public W8 C  /* Charcteristic 8 bit*/
+        {
+            get
+            {
+                return (W8)(w >> cpos);
+            }
+            set
+            {
+                w = (w & icwmask) | ((ulong)value << cpos);
+            }
+        }
+
+        public W1 B9  /* Bit9 1 Bit*/
+        {
+            get
+            {
+                return (W1)(w >> b9pos);
+            }
+            set
+            {
+                w = (w & ib9wmask) | ((ulong)value << b9pos);
+            }
+        }
         public override string ToString()
         {
             return Convert.ToString((long)w, 8).PadLeft(12, '0');
@@ -290,6 +431,10 @@ namespace Sim704
         {
             return new W37(d);
         }
+        public static explicit operator W37(W35 d)
+        {
+            return new W37(d);
+        }
         public override string ToString()
         {
             return Convert.ToString((long)w, 8).PadLeft(13, '0');
@@ -308,6 +453,9 @@ namespace Sim704
         const int qlen = 1; /* Length of Q BIT */
         const int wlen = m35len + pblen + qlen + slen; /* Word length */
         const int m37len = wlen - slen; /* 37Bit Magnitude length */
+        const int flen = 27; /* lenght of the fraction */
+        const int c10len = 10; /* lenght of the 10 bit characteristic */
+        const int b9len = 1; /* lenght of Bit 9 */
 
         const int apos = 0; /* bit pos for Adress*/
         const int tpos = apos + alen; /* bit pos for Tag*/
@@ -319,6 +467,10 @@ namespace Sim704
         const int m35pos = 0;           /* bit pos for 35 Bit Magniude */
         const int m36pos = 0;           /* bit pos for 36 Bit Magniude */
         const int m37pos = 0;           /* bit pos for 37 Bit Magniude */
+        const int fpos = 0;   /* bit pos  of the fraction */
+        const int c10pos = flen; /* bit pos of the 10 bit characteristic */
+        const int b9pos = c10pos - b9len; /* bit pos for Bit 9 */
+
 
         const ulong a0mask = (1UL << alen) - 1UL; /* mask for Adress at bit 0*/
         const ulong t0mask = (1UL << tlen) - 1UL; /* mask for Tag at bit 0*/
@@ -331,6 +483,9 @@ namespace Sim704
         const ulong s0mask = (1UL << slen) - 1UL; /* mask for Sign at bit 0 */
         const ulong q0mask = (1UL << qlen) - 1UL;/* mask for Q Bit at bit 0 */
         const ulong pb0mask = (1UL << pblen) - 1UL;/* mask for P Bit at bit 0 */
+        const ulong f0mask = (1UL << flen) - 1UL; /* mask for fraction at bit 0 */
+        const ulong c100mask = (1UL << c10len) - 1UL; /* mask for 10 bit characteristic at bit 0  */
+        const ulong b90mask = (1UL << b9len) - 1UL; /* mask for Bit 9 at bit 0 */
 
         const ulong awmask = a0mask << apos; /* mask for Adress in word */
         const ulong twmask = t0mask << tpos; /* mask for Tag in word */
@@ -342,7 +497,9 @@ namespace Sim704
         const ulong swmask = s0mask << spos; /* mask for Sign in word */
         const ulong qwmask = q0mask << qpos; /* mask for Q Bit in word */
         const ulong pbwmask = pb0mask << pbpos; /* mask for P Bit in word */
-
+        const ulong fwmask = f0mask << fpos; /* mask for fraction in word */
+        const ulong c10wmask = c100mask << c10pos; /* mask for 10 bit characteristic int word */
+        const ulong b9wmask = b90mask << b9pos; /* mask for Bit 9 in word */
 
         const ulong iawmask = (wmask ^ awmask); /* inv mask for Adress in word */
         const ulong itwmask = (wmask ^ twmask); /* inv mask for Tag in word  */
@@ -354,6 +511,9 @@ namespace Sim704
         const ulong iswmask = (wmask ^ swmask); /* inv mask for Sign in word  */
         const ulong iqwmask = (wmask ^ qwmask); /* inv mask for Q Bit in word  */
         const ulong ipbwmask = (wmask ^ pbwmask); /* inv mask for P Bit in word  */
+        const ulong ifwmask = (wmask ^ fwmask); /* inv mask for fraction in word  */
+        const ulong ic10wmask = (wmask ^ c10wmask); /* inv mask for 10 bit characteristic in word  */
+        const ulong ib9wmask = (wmask ^ b9wmask); /* inv mask for Bit 1 in word */
 
         ulong w; /* 38 bit Word stored in 64 bit ulong*/
 
@@ -479,6 +639,43 @@ namespace Sim704
                 w = (w & iswmask) | ((ulong)value << spos);
             }
         }
+        public W27 F  /* Fraction 27 bit */
+        {
+            get
+            {
+                return (W27)w;
+            }
+            set
+            {
+                w = (w & ifwmask) | value;
+            }
+        }
+        public W10 C10  /* Charcteristic 10 bit*/
+        {
+            get
+            {
+                return (W10)(w >> c10pos);
+            }
+            set
+            {
+                w = (w & ic10wmask) | ((ulong)value << c10pos);
+            }
+        }
+        public W1 B9  /* Bit9 1 Bit*/
+        {
+            get
+            {
+                return (W1)(w >> b9pos);
+            }
+            set
+            {
+                w = (w & ib9wmask) | ((ulong)value << b9pos);
+            }
+        }
+        public static explicit operator W38(W36 d)
+        {
+            return new W38(d);
+        }
         public override string ToString()
         {
             return Convert.ToString((long)w, 8).PadLeft(13, '0');
@@ -487,8 +684,8 @@ namespace Sim704
         {
             StringBuilder sb = new StringBuilder();
             uint l = S + Q + PB;
-            while(l<3)
-            { 
+            while (l < 3)
+            {
                 sb.Append(' ');
                 l++;
             }
@@ -498,38 +695,29 @@ namespace Sim704
                 sb.Append('Q');
             if (PB != 0)
                 sb.Append('P');
-            sb.Append(M35.ToString());            
+            sb.Append(M35.ToString());
             return sb.ToString();
         }
     }
     struct WA
     {
+        static uint wmask; /* mask for word */
 
-        public static uint wmask; /* mask for word */
+        uint w; /* N bit Word stored in 32 bit uint*/
 
-        uint w; /* 15 bit Word stored in 32 bit uint*/
-
+        public static void SetMask(uint AddressMask)
+        {
+            wmask = AddressMask;
+        }
         public WA(uint value)
         {
             w = value & wmask;
-        }
-        public WA(ulong value)
-        {
-            w = (uint)value & wmask;
         }
         public static implicit operator uint(WA d)
         {
             return d.w;
         }
-        public static implicit operator ulong(WA d)
-        {
-            return d.w;
-        }
         public static explicit operator WA(uint d)
-        {
-            return new WA(d);
-        }
-        public static explicit operator WA(ulong d)
         {
             return new WA(d);
         }
@@ -538,26 +726,24 @@ namespace Sim704
             return Convert.ToString(w, 8).PadLeft(5, '0');
         }
     }
-
     static class CPU704
     {
-        static bool trapping = false;
-        static bool acoflag = false;
-        public static WA IC; /* Instruction Counter */
-        public static WA NIC; /* Next Instruction Counter */
-        public static W38 AC;
-        public static W36 MQ;
-        static WA[] X = new WA[3];
-        public static bool halt = false;
-        public static bool repeat = false;
+        static bool trapping = false; /* Trapping mode active */
+        public static bool repeat;
+        public static WA ILC; /* Instruction Counter */
+        public static WA NIC; /* Next Instruction Counter for Transfer*/
+        static WA[] X = new WA[3]; /* Index Register */
+        public static bool halt = false;        
         static public void Clr()
         {
-            AC = (W38)0;
-            MQ = (W36)0;
+            ALU.Clear();
             X[0] = (WA)0;
             X[1] = (WA)0;
             X[2] = (WA)0;
-            IC = (WA)0;
+            ILC = (WA)0;
+            halt = false;
+            trapping = false;
+            repeat = false;
             CoreMemory.Clear();
         }
         static void SetX(W3 T, WA A)
@@ -587,90 +773,139 @@ namespace Sim704
         }
         static W36 LoadCY(W36 SR) /* Load C(Y) */
         {
-            return CoreMemory.GetW((WA)(SR.A - GetX(SR.T)));
+            return CoreMemory.C((WA)(SR.A - GetX(SR.T)));
         }
         static void StoreCY(W36 SR, W36 V) /* Store V to C(Y) */
         {
-            CoreMemory.SetW((WA)(SR.A - GetX(SR.T)), V);
+            CoreMemory.C((WA)(SR.A - GetX(SR.T)), V);
         }
-
+        static WA GetYni(W36 SR) /* Get Y not indexed*/
+        {
+            return (WA)(uint)SR.A;
+        }
+        static W36 LoadCYni(W36 SR) /* Load C(Y) not indexed*/
+        {
+            return CoreMemory.C((WA)(uint)SR.A);
+        }
+        static void StoreCYni(W36 SR, W36 V) /* Store V to C(Y) not indexed*/
+        {
+            CoreMemory.C((WA)(uint)SR.A, V);
+        }
         static W36 SR;
         static void Debug(string OPC)
         {
-            Console.Write("0{0} {1} {2}                      {3} {4} {5}  {6}   ", IC, AC.ACToString(), MQ.MQtoString(), X[0], X[1], X[2], SR.MQtoString());
+            Console.Write("0{0} {1} {2}                      {3} {4} {5}  {6}   ", ILC, ALU.AC.ACToString(), ALU.MQ.MQtoString(), X[0], X[1], X[2], SR.MQtoString());
             Console.WriteLine(OPC);
         }
         static void DebugAT(string OPC)
         {
-            Console.Write("0{0} {1} {2}                      {3} {4} {5}  {6}   ", IC, AC.ACToString(), MQ.MQtoString(), X[0], X[1], X[2], SR.MQtoString());
+            Console.Write("0{0} {1} {2}                      {3} {4} {5}  {6}   ", ILC, ALU.AC.ACToString(), ALU.MQ.MQtoString(), X[0], X[1], X[2], SR.MQtoString());
             Console.Write(OPC);
             if (SR.T != 0)
                 Console.WriteLine(" {0},{1}", SR.A, SR.T);
             else
                 Console.WriteLine(" {0}", SR.A);
         }
+        static void DebugAT0(string OPC)
+        {
+            Console.Write("0{0} {1} {2}                      {3} {4} {5}  {6}   ", ILC, ALU.AC.ACToString(), ALU.MQ.MQtoString(), X[0], X[1], X[2], SR.MQtoString());
+            Console.Write(OPC);
+            Console.WriteLine(" {0},{1}", SR.A, SR.T);
+        }
         static void DebugATD(string OPC)
         {
-            Console.Write("0{0} {1} {2}                      {3} {4} {5}  {6}   ", IC, AC.ACToString(), MQ.MQtoString(), X[0], X[1], X[2], SR.MQtoString());
+            Console.Write("0{0} {1} {2}                      {3} {4} {5}  {6}   ", ILC, ALU.AC.ACToString(), ALU.MQ.MQtoString(), X[0], X[1], X[2], SR.MQtoString());
             Console.Write(OPC);
             Console.WriteLine(" {0},{1},{2}", SR.A, SR.T, SR.D);
         }
-        static void ADD(W36 SR)
+        static public bool Step()
         {
-            bool f1 = false; /* True Signs of AC and SR differs */
-
-            W1 f2 = AC.S; /* Sign of AC */
-            W1 f8 = AC.PB; /* P of in AC */
-
-            /* Make AC Positive  */
-            AC.S = (W1)0;
-
-            /* Check signes of SR & AC */
-            if (SR.S != f2)
-            {
-                AC.M37 = (W37)(~AC); /* One's compliment */
-                f1 = true;
-            }
-            AC = (W38)(AC + SR.M);
-
-            /* Check carry from Q */
-            if (f1)
-            {    /* Check if signs were not same */
-                if (0 != AC.S)
-                {
-                    f2 = (W1)(~f2);
-                    AC = (W38)(AC + 1);
-                    if (AC.PB != f8)
-                        acoflag = true;
-                }
-                else
-                    AC.M37 = (W37)(~AC); /* One's compliment */
-            }
-            else if (AC.PB != f8)
-                acoflag = true;
-            /* Restore sign to AC */
-            AC.S = f2;
-        }
-        static public void Step()
-        {
-
-            SR = CoreMemory.GetW(IC);
-
+            /* Fetch instruction */
+            SR = CoreMemory.C(ILC);
+            bool transferInst = false;
+            bool doTransfer = false;
+            uint skip = 0;
             /* check if Type A or Type B instruction */
-            uint S = SR.S;
-            uint P = (uint)(SR.M >> 33);
+            uint S = SR.S; /* Sign */
+            uint P = (SR.P & 3); /* lower 2 bits of prefix */
             switch (P)
             {
+                case 1: /*1000*/
+                    if (S == 0) /* +1 : TXI Transfer with index incremeted */
+                    {
+                        DebugATD("TXI");
+                        SetX(SR.T, (WA)(GetX(SR.T) + SR.D));
+                        NIC = GetYni(SR);
+                        transferInst = true;
+                        doTransfer = true;
+                    }
+                    else
+                    {
+                        Console.WriteLine("Type A operation {0}{1} not implemented", S != 0 ? '-' : '+', P);
+                        halt = true;
+                    }
+                    break;
+                case 2:/*2000*/
+                    if (S == 0) /* +2 : TIX Transfer on Index  */
+                    {
+                        DebugATD("TIX");
+                        WA X = GetX(SR.T);
+                        transferInst = true;
+                        if (X > (WA)(uint)SR.D)
+                        {
+                            SetX(SR.T, (WA)(X - SR.D));
+                            NIC = GetYni(SR);
+                            doTransfer = true;
+                        }
+                    }
+                    else /* -2 : TNX  Transfer on No Index  */
+                    {
+                        DebugATD("TNX");
+                        WA X = GetX(SR.T); ;
+                        transferInst = true;
+                        if (X <= (WA)(uint)SR.D)
+                        {
+                            NIC = GetYni(SR);
+                            doTransfer = true;
+                        }
+                        else
+                            SetX(SR.T, (WA)(X - SR.D));
+                    }
+                    break;
+                case 3: /*3000*/
+                    if (S == 0) /* +3 : TXH */
+                    {
+                        DebugATD("TXH");
+                        transferInst = true;
+                        if (GetX(SR.T) > (WA)(uint)SR.D)
+                        {
+                            NIC = GetYni(SR);
+                            doTransfer = true;
+                        }
+                    }
+                    else /* -3 : TXL */
+                    {
+                        DebugATD("TXL");
+                        transferInst = true;
+                        if (GetX(SR.T) <= (WA)(uint)SR.D)
+                        {
+                            NIC = GetYni(SR);
+                            doTransfer = true;
+                        }
+                    }
+                    break;
                 case 0:
                     /* Type B instruction */
-                    P = (uint)(SR.M >> 24);
+                    P = (uint)(SR.D >> 6); /* upper 9 bits of Decrement */
                     switch (P)
                     {
-                        case 0: /*0*/
-                            if (S == 0) /*+000 HTR Hat and Transfer*/
+                        case 0: /*000*/
+                            if (S == 0) /*+000 HTR Halt and Transfer*/
                             {
                                 DebugAT("HTR");
                                 halt = true;
+                                transferInst = true;
+                                doTransfer = true;
                                 NIC = GetY(SR);
                             }
                             else
@@ -679,10 +914,12 @@ namespace Sim704
                                 halt = true;
                             }
                             break;
-                        case 16: /*20*/
+                        case 16: /*020*/
                             if (S == 0) /*+20 TRA Transfer*/
                             {
                                 DebugAT("TRA");
+                                transferInst = true;
+                                doTransfer = true;
                                 NIC = GetY(SR);
                             }
                             else
@@ -691,12 +928,41 @@ namespace Sim704
                                 halt = true;
                             }
                             break;
-                        case 60: /*74*/
+                        case 17: /*021*/
+                            if (S == 0) /*+20 TTR Trap Transfer*/
+                            {
+                                DebugAT("TTR");                                
+                                doTransfer = true;
+                                NIC = GetY(SR);
+                            }
+                            else
+                            {
+                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                halt = true;
+                            }
+                            break;
+                        case 32: /*040*/
+                            if (S == 0) /*+40 TLQ Transfer on Low MQ*/
+                            {
+                                DebugAT("TLQ");
+                                transferInst = true;
+                                doTransfer = ALU.TLQ();
+                                NIC = GetY(SR);
+                            }
+                            else
+                            {
+                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                halt = true;
+                            }
+                            break;
+                        case 60: /*074*/
                             if (S == 0) /*+74 TSX Transfer and set index */
                             {
                                 DebugAT("TSX");
-                                SetX(SR.T, (WA)(0U - IC));
-                                NIC = (WA)(uint)SR.A;
+                                SetX(SR.T, (WA)(0x8000U - ILC));
+                                transferInst = true;
+                                doTransfer = true;
+                                NIC = GetYni(SR);
                             }
                             else
                             {
@@ -705,78 +971,194 @@ namespace Sim704
                             }
                             break;
                         case 64: /*100*/
-                            if (S == 0) /*+100 TZE Transfer on Zero*/
+                            if (S == 0) /* +100 TZE Transfer on Zero*/
                             {
                                 DebugAT("TZE");
-                                if (AC.M37 == 0)
-                                    NIC = GetY(SR);
-                                else
-                                    NIC = (WA)(IC + 1);
+                                transferInst = true;
+                                doTransfer = ALU.TZE();
+                                NIC = GetY(SR);
                             }
-                            else   /*+100 TZE Transfer on No Zero*/
+                            else   /* -100 TNZ Transfer on No Zero*/
                             {
                                 DebugAT("TNZ");
-                                if (AC.M37 != 0)
-                                    NIC = GetY(SR);
-                                else
-                                    NIC = (WA)(IC + 1);
+                                transferInst = true;
+                                doTransfer = ALU.TNZ();
+                                NIC = GetY(SR);
                             }
                             break;
                         case 80: /*120*/
-                            if (S == 0)
+                            if (S == 0) /*+120 TPL Transfer on Plus*/
+                            {
+                                DebugAT("TPL");
+                                transferInst = true;
+                                doTransfer = ALU.TPL();
+                                NIC = GetY(SR);
+                            }
+                            else /*-120 TMI Transfer on Minus*/
+                            {
+                                DebugAT("TMI");
+                                transferInst = true;
+                                doTransfer = ALU.TMI();
+                                NIC = GetY(SR);
+                            }
+                            break;
+                        case 96: /*140*/
+                            if (S == 0) /*+140 TOV Transfer on Overflow */
+                            {
+                                DebugAT("TOV");
+                                transferInst = true;
+                                doTransfer = ALU.TOV();
+                                NIC = GetY(SR);
+                            }
+                            else /*-140 TOV Transfer on No Overflow */
+                            {
+                                DebugAT("TNO");
+                                transferInst = true;
+                                doTransfer = ALU.TNO();
+                                NIC = GetY(SR);
+                            }
+                            break;
+                        case 113: /*161*/
+                            if (S == 0) /*+161 TQO Transfer on MQ Overflow */
+                            {
+                                DebugAT("TQO");
+                                transferInst = true;
+                                doTransfer = ALU.TQO();
+                                NIC = GetY(SR);
+                            }
+                            else
                             {
                                 Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
                                 halt = true;
                             }
-                            else /*-120 TMI Transfer on Minus*/
+                            break;
+                        case 114: /*162*/
+                            if (S == 0) /*+161 TQP Transfer on MQ Plus*/
                             {
-                                DebugAT("TZE");
-                                if (AC.S != 0)
-                                    NIC = GetY(SR);
-                                else
-                                    NIC = (WA)(IC + 1);
+                                DebugAT("TQP");
+                                transferInst = true;
+                                doTransfer = ALU.TQP();
+                                NIC = GetY(SR);
+                            }
+                            else
+                            {
+                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                halt = true;
+                            }
+                            break;
+                        case 128: /*200*/
+                            if (S == 0) /*+200 MPY Multiply*/
+                            {
+                                DebugAT("MPY");
+                                ALU.MPY(GetY(SR));
+                            }
+                            else /*-200 MPY Multiply and Round*/
+                            {
+                                DebugAT("MPR");
+                                ALU.MPR(GetY(SR));
+                            }
+                            break;
+                        case 144: /*220*/
+                            if (S == 0) /*+220 DVH Divide or HALT*/
+                            {
+                                DebugAT("DVH");
+                                halt = ALU.DVH(GetY(SR));
+                            }
+                            else
+                            {
+                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                halt = true;
+                            }
+                            break;
+                        case 145: /*221*/
+                            if (S == 0) /*+221 DVH Divide or Proceed*/
+                            {
+                                DebugAT("DVP");
+                                ALU.DVP(GetY(SR));
+                            }
+                            else
+                            {
+                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                halt = true;
+                            }
+                            break;
+                        case 160: /*240*/
+                            if (S == 0) /*+240 FDH Floating Divide or HALT*/
+                            {
+                                DebugAT("FDH");
+                                halt = ALU.FDH(GetY(SR));
+                            }
+                            else
+                            {
+                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                halt = true;
+                            }
+                            break;
+                        case 161: /*241*/
+                            if (S == 0) /*+241 FDP Floating Divide or Proceed*/
+                            {
+                                DebugAT("FDP");
+                                ALU.FDP(GetY(SR));
+                            }
+                            else
+                            {
+                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                halt = true;
+                            }
+                            break;
+                        case 176: /*260*/
+                            if (S == 0) /*+260 FMP FloatingMultiply */
+                            {
+                                DebugAT("FMP");
+                                ALU.FMP(GetY(SR));
+                            }
+                            else /*-260 UFM Unnormalizied Floating Multiply */
+                            {
+                                DebugAT("UFM");
+                                ALU.UFM(GetY(SR));
+                            }
+                            break;
+                        case 192: /*300*/
+                            if (S == 0) /*+300 FAD Floating Add */
+                            {
+                                DebugAT("FAD");
+                                ALU.FAD(GetY(SR));
+                            }
+                            else /*-300 UFA Unnormalizied Floating Add */
+                            {
+                                DebugAT("UFA");
+                                ALU.UFA(GetY(SR));
+                            }
+                            break;
+                        case 194: /*302*/
+                            if (S == 0) /* +302 FSB Floating Subtract */
+                            {
+                                DebugAT("FSB");
+                                ALU.FSB(GetY(SR));
+                            }
+                            else /* -302 UFS Unnormalizied Floating Subtract */
+                            {
+                                DebugAT("UFS");
+                                ALU.UFS(GetY(SR));
                             }
                             break;
                         case 208: /*320*/
-                            if (S == 0) /*-320 ANS AND to Storage*/
+                            if (S == 0) /*+320 ANS AND to Storage*/
                             {
                                 DebugAT("ANS");
-                                StoreCY(SR, (W36)(AC & LoadCY(SR)));
-                                NIC = (WA)(IC + 1);
+                                ALU.ANS(GetY(SR));
                             }
                             else /*-320 ANA AND to Accumulator*/
                             {
                                 DebugAT("ANA");
-                                AC = (W38)(AC & LoadCY(SR));
-                                NIC = (WA)(IC + 1);
+                                ALU.ANA(GetY(SR));
                             }
                             break;
                         case 224: /*340*/
                             if (S == 0) /*+340 CAS Compare Accumulator with Storage*/
                             {
                                 DebugAT("CAS");
-                                W36 tmp = LoadCY(SR);
-                                int skip = 0;
-                                if (0 != AC.S)
-                                {
-                                    if (0 != tmp.S)
-                                    {
-                                        if (AC.M37 == tmp.M)
-                                            skip = 1;
-                                        else if (AC.M37 > tmp.M)
-                                            skip = 2;
-                                    }
-                                    else
-                                        skip = 2;
-                                }
-                                else if (0 == tmp.S)
-                                {
-                                    if (AC.M37 == tmp.M)
-                                        skip = 1;
-                                    else if (AC.M37 < tmp.M)
-                                        skip = 2;
-                                }
-                                NIC = (WA)(IC + 1 + skip);
+                                skip = ALU.CAS(GetY(SR));
                             }
                             else
                             {
@@ -788,20 +1170,7 @@ namespace Sim704
                             if (S == 0) /*+361 ACL Add and Carry Logical Word*/
                             {
                                 DebugAT("ACL");
-#if QisZeroAtACL
-                                AC.M37= (W37)(AC.M36 + LoadCY(SR));
-                                if (0 != AC.Q)
-                                {
-                                    AC.Q = (W1)0;
-                                    AC.M37 = (W37)(AC.M37 + 1);
-                                }
-#else
-                                W38 tmp = new W38() { M37 = (W37)(AC.M36 + LoadCY(SR)) };
-                                if (0 != tmp.Q)
-                                    tmp.M37 = (W37)(tmp.M37 + 1);
-                                AC.M36 = tmp.M36;
-#endif
-                                NIC = (WA)(IC + 1);
+                                ALU.ACL(GetY(SR));
                             }
                             else
                             {
@@ -813,21 +1182,19 @@ namespace Sim704
                             if (S == 0) /*+400 ADD Add */
                             {
                                 DebugAT("ADD");
-                                ADD(LoadCY(SR));
-                                NIC = (WA)(IC + 1);
+                                ALU.ADD(GetY(SR));
                             }
-                            else
+                            else/*-400 SBM Subtract Magnitude */
                             {
-                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
-                                halt = true;
+                                DebugAT("SBM");
+                                ALU.SBM(GetY(SR));
                             }
                             break;
                         case 257: /*401*/
                             if (S == 0) /*+401 ADM Add Magnitude */
                             {
                                 DebugAT("ADM");
-                                ADD((W36)(ulong)(LoadCY(SR).M));
-                                NIC = (WA)(IC + 1);
+                                ALU.ADM(GetY(SR));
                             }
                             else
                             {
@@ -839,10 +1206,31 @@ namespace Sim704
                             if (S == 0) /*+402 SUB*/
                             {
                                 DebugAT("SUB");
-                                W36 tmp = LoadCY(SR);
-                                tmp.S = (W1)~tmp.S;
-                                ADD(tmp);
-                                NIC = (WA)(IC + 1);
+                                ALU.SUB(GetY(SR));
+                            }
+                            else
+                            {
+                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                halt = true;
+                            }
+                            break;
+                        case 272: /*420*/
+                            if (S == 0) /*+420 HTR Halt and Proceed*/
+                            {
+                                DebugAT("HPR");
+                                halt = true;
+                            }
+                            else
+                            {
+                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                halt = true;
+                            }
+                            break;
+                        case 304: /*460 */
+                            if (S == 0) /*+460 LDA Locate Drum Address*/
+                            {
+                                DebugAT("LDA");
+                                Io704.LDA((uint)LoadCY(SR));
                             }
                             else
                             {
@@ -854,21 +1242,16 @@ namespace Sim704
                             if (S == 0) /*+500 CLA Clear and ADD */
                             {
                                 DebugAT("CLA");
-                                W36 tmp = LoadCY(SR);
-                                AC = (W38)0;
-                                AC.M35 = tmp.M;
-                                AC.S = tmp.S;
-                                NIC = (WA)(IC + 1);
+                                ALU.CLA(GetY(SR));
                             }
                             else /*-500 CAL Clear and ADD logical Word */
                             {
                                 DebugAT("CAL");
-                                AC = (W38)(ulong)LoadCY(SR);
-                                NIC = (WA)(IC + 1);
+                                ALU.CAL(GetY(SR));
                             }
                             break;
                         case 321: /*501*/
-                            if (S == 0) /*+500 CLA Clear and ADD */
+                            if (S == 0)
                             {
                                 Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
                                 halt = true;
@@ -876,30 +1259,14 @@ namespace Sim704
                             else /*-501 ORA Or to Accumulator*/
                             {
                                 DebugAT("ORA");
-                                AC = (W38)(AC | LoadCY(SR));
-                                NIC = (WA)(IC + 1);
+                                ALU.ORA(GetY(SR));
                             }
                             break;
-                        case 348: /*534*/
-                            if (S == 0) /*+534 LXA Load Index from Address*/
+                        case 322: /*502*/
+                            if (S == 0) /*+502 CLS Clear and Subtract */
                             {
-                                DebugAT("LXA");
-                                SetX(SR.T, (WA)(uint)CoreMemory.GetW((WA)(uint)SR.A).A);
-                                NIC = (WA)(IC + 1);
-                            }
-                            else   /* -534 LXD Load Index from Decrement */
-                            {
-                                DebugAT("LXD");
-                                SetX(SR.T, (WA)(uint)CoreMemory.GetW((WA)(uint)SR.A).D);
-                                NIC = (WA)(IC + 1);
-                            }
-                            break;
-                        case 368: /*560*/
-                            if (S == 0) /*+560 LDQ Load MQ*/
-                            {
-                                DebugAT("LDQ");
-                                MQ = LoadCY(SR);
-                                NIC = (WA)(IC + 1);
+                                DebugAT("CLS");
+                                ALU.CLS(GetY(SR));
                             }
                             else
                             {
@@ -907,43 +1274,83 @@ namespace Sim704
                                 halt = true;
                             }
                             break;
-
-                        case 384: /*600*/
-                            if (S == 0)
+                        case 348: /*534*/
+                            if (S == 0) /*+534 LXA Load Index from Address*/
+                            {
+                                DebugAT("LXA");
+                                SetX(SR.T, (WA)(uint)LoadCYni(SR).A);
+                            }
+                            else   /* -534 LXD Load Index from Decrement */
+                            {
+                                DebugAT("LXD");
+                                SetX(SR.T, (WA)(uint)LoadCYni(SR).D);
+                            }
+                            break;
+                        case 368: /*560*/
+                            if (S == 0) /*+560 LDQ Load MQ*/
+                            {
+                                DebugAT("LDQ");
+                                ALU.LDQ(GetY(SR));
+                            }
+                            else
                             {
                                 Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
                                 halt = true;
                             }
+                            break;
+                        case 384: /*600*/
+                            if (S == 0) /*+600 STZ Store Zero*/
+                            {
+                                DebugAT("STZ");
+                                StoreCY(SR, new W36());
+                            }
                             else /*-600 STQ Store MQ*/
                             {
                                 DebugAT("STQ");
-                                StoreCY(SR, MQ);
-                                NIC = (WA)(IC + 1);
+                                ALU.STQ(GetY(SR));
+                            }
+                            break;
+                        case 385: /*601*/
+                            if (S == 0) /*+601 STO Store*/
+                            {
+                                DebugAT("STO");
+                                ALU.STO(GetY(SR));
+                            }
+                            else
+                            {
+                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                halt = true;
                             }
                             break;
                         case 386: /*602*/
                             if (S == 0) /*+602 SLW Store Logical Word*/
                             {
                                 DebugAT("SLW");
-                                StoreCY(SR, AC.M36);
-                                NIC = (WA)(IC + 1);
+                                ALU.SLW(GetY(SR));
                             }
                             else /*-602 ORS Or to Storage*/
                             {
                                 DebugAT("ORS");
-                                StoreCY(SR, (W36)(AC | LoadCY(SR)));
-                                NIC = (WA)(IC + 1);
+                                ALU.ORS(GetY(SR));
+                            }
+                            break;
+                        case 400:/*620*/
+                            if (S == 0)
+                            {
+                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                halt = true;
+                            }
+                            else /*+620 SLQ Store Left Half MQ*/
+                            {
+                                DebugAT("SLQ");
+                                ALU.SLQ(GetY(SR));
                             }
                             break;
                         case 401:/*621*/
                             if (S == 0) /*+621 STA Store Address*/
                             {
                                 DebugAT("STA");
-                                WA Adr = GetY(SR);
-                                W36 tmp = CoreMemory.GetW(Adr);
-                                tmp.A = AC.A;
-                                CoreMemory.SetW(Adr, tmp);
-                                NIC = (WA)(IC + 1);
+                                ALU.STA(GetY(SR));
                             }
                             else
                             {
@@ -955,11 +1362,19 @@ namespace Sim704
                             if (S == 0) /*+622 STD Store Decrement*/
                             {
                                 DebugAT("STD");
-                                WA Adr = GetY(SR);
-                                W36 tmp = CoreMemory.GetW(Adr);
-                                tmp.D = AC.D;
-                                CoreMemory.SetW(Adr, tmp);
-                                NIC = (WA)(IC + 1);
+                                ALU.STD(GetY(SR));
+                            }
+                            else
+                            {
+                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                halt = true;
+                            }
+                            break;
+                        case 408:/*630*/
+                            if (S == 0) /*+630 STP Store Prefix*/
+                            {
+                                DebugAT("STP");
+                                ALU.STP(GetY(SR));
                             }
                             else
                             {
@@ -975,52 +1390,38 @@ namespace Sim704
                             }
                             else /*-634 SXD Store index in Decrement*/
                             {
-
                                 DebugAT("SXD");
                                 if (SR.T != 0 && SR.T != 1 && SR.T != 2 && SR.T != 4)
                                     throw new Exception("Warning, multiple index registers, see page 26 / SXD");
-
-                                W36 temp = CoreMemory.GetW((WA)(uint)SR.A);
+                                W36 temp = LoadCYni(SR);
                                 temp.D = (W15)(uint)GetX(SR.T);
-                                CoreMemory.SetW((WA)(uint)SR.A, temp);
-
-                                NIC = (WA)(IC + 1);
+                                CoreMemory.C(GetYni(SR), temp);
                             }
                             break;
                         case 448:/*700*/
-                            if (S == 0) /*+700 CPY Copy and Skip */
+                            if (S == 0) /*+700 CPY Copy or Skip */
                             {
                                 DebugAT("CPY");
-                                NIC = (WA)(IC + 1 + Io704.CPY(ref CoreMemory.Mem[GetY(SR) & CoreMemory.AdrMask]));
+                                skip = (uint)Io704.CPY(ref CoreMemory.Mem[GetY(SR)]);
                             }
                             else /*-700 CAD Copy and Add Logical Word */
                             {
                                 DebugAT("CAD");
-                                int skip = Io704.CPY(ref CoreMemory.Mem[GetY(SR) & CoreMemory.AdrMask]);
+                                skip = (uint)Io704.CPY(ref CoreMemory.Mem[GetY(SR)]);
                                 if (skip == 0)
-                                {
-                                    W38 tmp = new W38() { M37 = (W37)(AC.M36 + MQ) };
-                                    if (0 != tmp.Q)
-                                        tmp.M37 = (W37)(tmp.M37 + 1);
-                                    AC.M36 = tmp.M36;
-                                }
-                                NIC = (WA)(IC + 1 + skip);
-
-
+                                    ALU.ACL(GetY(SR));
                             }
                             break;
                         case 476:/*734*/
                             if (S == 0) /* +734 PAX Place Address in Index */
                             {
                                 DebugAT("PAX");
-                                SetX(SR.T, (WA)(uint)AC.A);
-                                NIC = (WA)(IC + 1);
+                                SetX(SR.T, ALU.PAX());
                             }
-                            else
+                            else /* -734 PDX Place Decrement in Index */
                             {
-                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
-
-                                halt = true;
+                                DebugAT("PDX");
+                                SetX(SR.T, ALU.PDX());
                             }
                             break;
                         case 492:/*754*/
@@ -1032,77 +1433,181 @@ namespace Sim704
                             }
                             else /* -754 PXD Place Index in Decrement*/
                             {
-                                DebugAT("PXD");
+                                DebugAT0("PXD");
                                 if (SR.T != 0 && SR.T != 1 && SR.T != 2 && SR.T != 4)
                                     throw new Exception("Warning, multiple index registers, see page 26 / PXD");
-                                AC = (W38)0;
-                                AC.D = (W15)(uint)GetX(SR.T);
-
-                                NIC = (WA)(IC + 1);
-
+                                ALU.PXD(GetX(SR.T));
                             }
                             break;
                         case 496: /*760*/
-                            if (SR.A >> 4 == 0)
-                                switch ((uint)SR.A)
-                                {
-                                    case 6:
-                                        if (S == 0)/*+760...006 COM Complement Magnitude*/
-                                        {
-                                            Debug("COM");
-                                            AC.M37 = (W37)~AC.M37;
-                                            NIC = (WA)(IC + 1);
-                                        }
-                                        else
-                                        {
-                                            Console.WriteLine("Operation {0}{1}...{2} not implemented ->{3}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), Convert.ToString(SR.A, 8).PadLeft(3, '0'), (uint)SR.A);
-                                            halt = true;
-                                        }
-                                        break;
-                                    case 7:
-                                        if (S == 0)
-                                        {
-                                            Console.WriteLine("Operation {0}{1}...{2} not implemented ->{3}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), Convert.ToString(SR.A, 8).PadLeft(3, '0'), (uint)SR.A);
-                                            halt = true;
-                                        }
-                                        else /*-760...007 LTM*/
-                                        {
-                                            Debug("LTM");
-                                            trapping = false;
-                                            NIC = (WA)(IC + 1);
-                                        }
-                                        break;
-                                    case 10:
-                                        if (S == 0)
-                                        {
-                                            Console.WriteLine("Operation {0}{1}...{2} not implemented ->{3}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), Convert.ToString(SR.A, 8).PadLeft(3, '0'), (uint)SR.A);
-
-                                            halt = true;
-                                        }
-                                        else /*-760...012 RTT */
-                                        {
-                                            Debug("RTT");
-                                            NIC = (WA)(IC + 1 + Io704.RTT());
-                                            break;
-                                        }
-                                        break;
-
-                                    default:
-                                        Console.WriteLine("Operation {0}{1}...{2} not implemented ->{3}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), Convert.ToString(SR.A, 8).PadLeft(3, '0'), (uint)SR.A);
-                                        halt = true;
-                                        break;
-                                }
-                            else
                             {
-                                if (S == 0) /* +760 PSE Plus sense*/
+                                uint unit = GetY(SR);
+                                uint subunit = unit & 15;
+                                unit >>= 4;
+                                if (unit == 0)
                                 {
-                                    DebugAT("PSE");
-                                    NIC = (WA)(IC + 1 + Io704.PSE(SR.A));
+                                    switch (subunit)
+                                    {
+                                        case 0: /*760...000*/
+                                            if (S == 0)/*+760...000 CLM CLear Magnitude*/
+                                            {
+                                                Debug("CLM");
+                                                ALU.CLM();
+                                            }
+                                            else
+                                            {
+                                                Console.WriteLine("Operation {0}{1}...{2} not implemented ->{3}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), Convert.ToString(SR.A, 8).PadLeft(3, '0'), (uint)SR.A);
+                                                halt = true;
+                                            }
+                                            break;
+                                        case 1: /*760...001*/
+                                            if (S == 0)/*+760...001 LBT Low Order Bit Test */
+                                            {
+                                                Debug("LBT");
+                                                skip = ALU.LBT();
+                                            }
+                                            else /*-760...001 PBT P Bit Test */
+                                            {
+                                                Debug("PBT");
+                                                skip = ALU.PBT();
+                                            }
+                                            break;
+                                        case 2: /*760...002*/
+                                            if (S == 0)/*+760...002 CHS Change Sign*/
+                                            {
+                                                Debug("CHS");
+                                                ALU.CHS();
+                                            }
+                                            else
+                                            {
+                                                Console.WriteLine("Operation {0}{1}...{2} not implemented ->{3}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), Convert.ToString(SR.A, 8).PadLeft(3, '0'), (uint)SR.A);
+                                                halt = true;
+                                            }
+                                            break;
+                                        case 3: /*760...003*/
+                                            if (S == 0)/*+760...003 SSP Set Sign Plus*/
+                                            {
+                                                Debug("SSP");
+                                                ALU.SSP();
+                                            }
+                                            else/*-760...003 SSP Set Sign Plus*/
+                                            {
+                                                Debug("SSM");
+                                                ALU.SSM();
+                                            }
+                                            break;
+                                        case 6: /*760...006*/
+                                            if (S == 0)/*+760...006 COM Complement Magnitude*/
+                                            {
+                                                Debug("COM");
+                                                ALU.COM();
+                                            }
+                                            else
+                                            {
+                                                Console.WriteLine("Operation {0}{1}...{2} not implemented ->{3}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), Convert.ToString(SR.A, 8).PadLeft(3, '0'), (uint)SR.A);
+                                                halt = true;
+                                            }
+                                            break;
+                                        case 7:  /*760...007*/
+                                            if (S == 0) /*-760...007 ETM Enter Trapping Mode*/
+                                            {
+                                                Debug("ETM");
+                                                trapping = true;
+                                            }
+                                            else /*-760...007 LTM Leave Trapping Mode*/
+                                            {
+                                                Debug("LTM");
+                                                trapping = false;
+                                            }
+                                            break;
+                                        case 8: /*760...010*/
+                                            if (S == 0)/*+760...010 RND Round*/
+                                            {
+                                                Debug("RND");
+                                                ALU.RND();
+                                            }
+                                            else
+                                            {
+                                                Console.WriteLine("Operation {0}{1}...{2} not implemented ->{3}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), Convert.ToString(SR.A, 8).PadLeft(3, '0'), (uint)SR.A);
+                                                halt = true;
+                                            }
+                                            break;
+                                        case 9: /*760...011*/
+                                            if (S == 0)/*+760...011 ETT End of Tape Test*/
+                                            {
+                                                Debug("ETT");
+                                                skip += Io704.ETT();
+                                            }
+                                            else
+                                            {
+                                                Console.WriteLine("Operation {0}{1}...{2} not implemented ->{3}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), Convert.ToString(SR.A, 8).PadLeft(3, '0'), (uint)SR.A);
+                                                halt = true;
+                                            }
+                                            break;
+                                        case 10: /*760...012 */
+                                            if (S == 0) /*+760...012 DCT Divide Check Test */
+                                            {
+                                                Debug("DCT");
+                                                skip = ALU.DCT();
+                                            }
+                                            else /*-760...012 RTT Redundancy Tape Test*/
+                                            {
+                                                Debug("RTT");
+                                                skip = Io704.RTT();
+                                            }
+                                            break;
+                                        default:
+                                            Console.WriteLine("Operation {0}{1}...{2} not implemented ->{3}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), Convert.ToString(SR.A, 8).PadLeft(3, '0'), (uint)SR.A);
+                                            halt = true;
+                                            break;
+                                    }
                                 }
                                 else
                                 {
-                                    DebugAT("MSE");
-                                    NIC = (WA)(IC + 1 + Io704.MSE(SR.A));
+                                    if (S == 0) /* +760 PSE Plus sense*/
+                                    {
+                                        string Opc = "PSE";
+                                        switch (unit)
+                                        {
+                                            case 1:
+                                                Opc = "CFF";
+                                                break;
+                                            case 6:
+                                                if (subunit == 0)
+                                                    Opc = "SLF";
+                                                else
+                                                    Opc = "SLN";
+                                                break;
+                                            case 7:
+                                                Opc = "SWT";
+                                                break;
+                                            case 14:
+                                                Opc = "SPU";
+                                                break;
+                                            case 15:
+                                                if (subunit == 0)
+                                                    Opc = "SPT";
+                                                else
+                                                    Opc = "SPR";
+                                                break;
+                                        }
+                                        DebugAT(Opc);
+                                        skip = (uint)Io704.PSE(GetY(SR));
+                                    }
+                                    else /* +760 MSE Minus sense*/
+                                    {
+                                        string Opc = "MSE";
+                                        switch (unit)
+                                        {
+                                            case 8:
+                                                Opc = "SLT";
+                                                break;
+                                            default:
+                                                break;
+                                        }
+                                        DebugAT(Opc);
+                                        skip = (uint)Io704.MSE(GetY(SR));
+                                    }
                                 }
                             }
                             break;
@@ -1110,7 +1615,6 @@ namespace Sim704
                             if (S == 0) /* +761 NOP No Operation*/
                             {
                                 DebugAT("NOP");
-                                NIC = (WA)(IC + 1);
                             }
                             else
                             {
@@ -1122,9 +1626,30 @@ namespace Sim704
                         case 498:/*762*/
                             if (S == 0) /* +762 RDS Read Select */
                             {
-                                DebugAT("RDS");
-                                Io704.RDS(GetY(SR));
-                                NIC = (WA)(IC + 1);
+                                uint unit = GetY(SR);
+                                string OPcode = "RDS";
+                                switch (unit >> 4)
+                                {
+                                    case 8: /* BCD Tape */
+                                        OPcode = "RTD";
+                                        break;
+                                    case 9: /* Bin Tape */
+                                        OPcode = "RTB";
+                                        break;
+                                    case 12: /* Drum */
+                                        OPcode = "RDR";
+                                        break;
+                                    case 13: /* Card Reader */
+                                        //OPcode = "RCD";
+                                        break;
+                                    case 15: /* Printer */
+                                        OPcode = "RPR";
+                                        break;
+                                    default:
+                                        throw new InvalidOperationException("RDS");
+                                }
+                                DebugAT(OPcode);
+                                Io704.RDS(unit);
                             }
                             else
                             {
@@ -1133,49 +1658,35 @@ namespace Sim704
                                 halt = true;
                             }
                             break;
-                        case 499:
+                        case 499: /*763*/
                             if (S == 0) /* +763 LLS Long Left Shift */
                             {
                                 DebugAT("LLS");
-                                uint shift = GetY(SR) % 256;
-                                for (uint i = 0; i < shift; i++)
-                                {
-                                    W1 Sign = MQ.S;
-                                    MQ = (W36)(MQ << 1);
-                                    AC = (W38)((AC << 1) | MQ.S);
-                                    AC.S = MQ.S = Sign;
-                                    if (AC.PB != 0)
-                                        acoflag = true;
-                                }
-                                NIC = (WA)(IC + 1);
+                                ALU.LLS(GetY(SR));
                             }
                             else/* -763 LGL Logical Left */
                             {
                                 DebugAT("LGL");
-                                uint shift = GetY(SR) % 256;
-                                for (uint i = 0; i < shift; i++)
-                                {
-                                    AC.M37 = (W37)((AC.M37 << 1) | MQ.S);
-                                    MQ = (W36)(MQ << 1);
-                                    if (AC.PB != 0)
-                                        acoflag = true;
-                                }
-                                NIC = (WA)(IC + 1);
+                                ALU.LGL(GetY(SR));
+                            }
+                            break;
+                        case 500:/*764*/
+                            if (S == 0) /* +764 BST Backspace Tape */
+                            {
+                                DebugAT("BST");
+                                Io704.BST(GetY(SR));
+                            }
+                            else
+                            {
+                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                halt = true;
                             }
                             break;
                         case 501: /*765*/
                             if (S == 0) /*+765 LRS Long Right Shift*/
                             {
                                 DebugAT("LRS");
-                                uint shift = GetY(SR) % 256;
-                                for (uint i = 0; i < shift; i++)
-                                {
-                                    MQ.S = (W1)(uint)AC;
-                                    MQ = (W36)(MQ >> 1);
-                                    MQ.S = AC.S;
-                                    AC.M37 = (W37)(AC.M37 >> 1);
-                                }
-                                NIC = (WA)(IC + 1);
+                                ALU.LRS(GetY(SR));
                             }
                             else
                             {
@@ -1186,9 +1697,37 @@ namespace Sim704
                         case 502: /*766*/
                             if (S == 0) /*+766 WRS Write Select*/
                             {
-                                DebugAT("WRS");
-                                Io704.WRS(GetY(SR));
-                                NIC = (WA)(IC + 1);
+                                uint unit = GetY(SR);
+                                string OPcode = "WRS";
+                                switch (unit >> 4)
+                                {
+                                    case 1: /* CRT */
+                                        OPcode = "WTV";
+                                        break;
+                                    case 8: /* BCD Tape */
+                                        OPcode = "WTD";
+                                        break;
+                                    case 9: /* Bin Tape */
+                                        //OPcode = "WTB";
+                                        break;
+                                    case 12: /* Drum */
+                                        OPcode = "WDR";
+                                        break;
+                                    case 13: /* IOD / Sim Tape */
+                                        if (unit == 219)
+                                            OPcode = "IOD";
+                                        else
+                                            OPcode = "WTS";
+                                        break;
+                                    case 14: /* Card Punch */
+                                        OPcode = "WPU";
+                                        break;
+                                    case 15: /* Printer */
+                                        OPcode = "WPR";
+                                        break;
+                                }
+                                DebugAT(OPcode);
+                                Io704.WRS(unit);
                             }
                             else
                             {
@@ -1197,32 +1736,10 @@ namespace Sim704
                             }
                             break;
                         case 503: /*767*/
-                            if (S == 0) /*+767*/
+                            if (S == 0) /*+767 ALS Accumulator Left Shift */
                             {
                                 DebugAT("ALS");
-                                uint shift = GetY(SR) % 256;
-                                for (uint i = 0; i < shift; i++)
-                                {
-                                    AC.M37 = (W37)(AC.M37 << 1);
-                                    if (0 != AC.PB)
-                                        acoflag = true;
-                                }
-                                NIC = (WA)(IC + 1);
-                            }
-                            else
-                            {
-                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
-                                halt = true;
-                            }
-                            break;
-                        case 505: /*771*/
-                            if (S == 0) /*+771 Accumulator Right Shift*/
-                            {
-                                DebugAT("ARS");
-                                uint shift = GetY(SR) % 256;
-                                for (uint i = 0; i < shift; i++)
-                                    AC.M37 = (W37)(AC.M37 >> 1);
-                                NIC = (WA)(IC + 1);
+                                ALU.ALS(GetY(SR));
                             }
                             else
                             {
@@ -1235,7 +1752,18 @@ namespace Sim704
                             {
                                 DebugAT("WEF");
                                 Io704.WEF(GetY(SR));
-                                NIC = (WA)(IC + 1);
+                            }
+                            else
+                            {
+                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                halt = true;
+                            }
+                            break;
+                        case 505: /*771*/
+                            if (S == 0) /*+771 Accumulator Right Shift*/
+                            {
+                                DebugAT("ARS");
+                                ALU.ARS(GetY(SR));
                             }
                             else
                             {
@@ -1248,12 +1776,23 @@ namespace Sim704
                             {
                                 DebugAT("REW");
                                 Io704.REW(GetY(SR));
-                                NIC = (WA)(IC + 1);
                             }
                             else
                             {
                                 Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
                                 halt = true;
+                            }
+                            break;
+                        case 507: /*773*/
+                            if (S == 0)
+                            {
+                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                halt = true;
+                            }
+                            else/*-773 RQL Rotate MQ Left*/
+                            {
+                                DebugAT("RQL");
+                                ALU.RQL(GetY(SR));
                             }
                             break;
                         default:
@@ -1262,78 +1801,32 @@ namespace Sim704
                             break;
                     }
                     break;
-                case 1:
-                    if (S == 0) /* +1 : TXI Transfer with index incremeted */
-                    {
-                        DebugATD("TXI");
-                        SetX(SR.T, (WA)(GetX(SR.T) + SR.D));
-                        NIC = (WA)(uint)SR.A;
-                    }
-                    else
-                    {
-                        Console.WriteLine("Type A operation {0}{1} not implemented", S != 0 ? '-' : '+', P);
-                        halt = true;
-                    }
-                    break;
-                case 2:
-                    if (S == 0) /* +2 : TIX  Transfer on Index  */
-                    {
-                        DebugATD("TIX");
-                        WA X = GetX(SR.T);
-                        if (X > (WA)(uint)SR.D)
-                        {
-                            SetX(SR.T, (WA)(X - SR.D));
-                            NIC = (WA)(uint)SR.A;
-                        }
-                        else
-                            NIC = (WA)(IC + 1);
-                    }
-                    else /* -2 : TNX  Transfer on No Index  */
-                    {
-                        DebugATD("TNX");
-                        WA X = GetX(SR.T);
-                        if (X <= (WA)(uint)SR.D)
-                            NIC = (WA)(uint)SR.A;
-                        else
-                        {
-                            SetX(SR.T, (WA)(X - SR.D));
-                            NIC = (WA)(IC + 1);
-                        }
-                    }
-                    break;
-                case 3:
-                    if (S == 0) /* +3 : TXH */
-                    {
-                        DebugATD("TXH");
-                        if (GetX(SR.T) > (WA)(uint)SR.D)
-                            NIC = (WA)(uint)SR.A;
-                        else
-                            NIC = (WA)(IC + 1);
-                    }
-                    else /* -3 : TXL */
-                    {
-                        DebugATD("TXL");
-                        if (GetX(SR.T) <= (WA)(uint)SR.D)
-                            NIC = (WA)(uint)SR.A;
-                        else
-                            NIC = (WA)(IC + 1);
-                    }
-                    break;
                 default:
                     Console.WriteLine("Type A operation {0}{1} not implemented", S != 0 ? '-' : '+', P);
                     halt = true;
                     break;
             }
+            if(trapping&&transferInst)
+            {
+                    WA A0 = new WA();
+                    W36 W0 = CoreMemory.C(A0);
+                    W0.A = (W15)(uint)ILC;
+                    CoreMemory.C(A0, W0);
+                    if (doTransfer)
+                        NIC = new WA(1);
+            }
+            if (!doTransfer)
+                ILC = (WA)(ILC + 1 + skip);
+            return doTransfer;
         }
-
         static public void LoadCrd()
         {
 
             Io704.RDS(13 * 16 + 1);
             Io704.CPY(ref CoreMemory.Mem[0]);
             Io704.CPY(ref CoreMemory.Mem[1]);
-
-            IC = (WA)0;
+            ALU.MQ = new W36();
+            ILC = (WA)0;
             Go(false);
         }
         static public void LoadTape()
@@ -1342,7 +1835,8 @@ namespace Sim704
             Io704.RDS(9 * 16 + 1);
             Io704.CPY(ref CoreMemory.Mem[0]);
             Io704.CPY(ref CoreMemory.Mem[1]);
-            IC = (WA)0;
+            ALU.MQ = new W36();
+            ILC = (WA)0;
             Go(false);
         }
         static public void LoadDrm()
@@ -1350,38 +1844,50 @@ namespace Sim704
             Io704.RDS(12 * 16 + 1);
             Io704.CPY(ref CoreMemory.Mem[0]);
             Io704.CPY(ref CoreMemory.Mem[1]);
-            IC = (WA)0;
+            ALU.MQ = new W36();
+            ILC = (WA)0;
             Go(false);
         }
         static public void Go(bool step)
         {
-            MQ = new W36();
+            bool transfer = false;
+
             do
             {
-                repeat = false;
-                Step();
-                if (halt)
+               // if (ILC == 1920)
+                 //   halt = true;
+                if (transfer)
+                    ILC = NIC;
+                transfer = Step();
+                if (halt || step)
                 {
-                    Console.WriteLine("HALT at {0}", IC);
-                    string l = Console.ReadLine();
-                    if (l == "g")
-                        halt = false;
-                    else if (l == "x")
-                        break;
+                    
                     if (repeat)
-                        NIC = IC;
+                    {
+                        ILC = (WA)(ILC - 1);
+                        repeat = false;
+                    }
+                    if (halt)
+                        Console.WriteLine("HALT at {0}", ILC);
+                    string l = Console.ReadLine();
+                    halt = false;
+                    if (l == "x")
+                        break;
+                    if (l.Length>=2&&l.Substring(0,2)=="go")
+                    {
+                        string[] split = l.Split(new char[] { ' ' });
+                        ILC = (WA)(uint)Convert.ToInt32(split[1], 8);
+                        transfer = false;
+                    }
+                    if (l == "s")
+                        step = !step;
                 }
-                else if (step)
-                {
-                    Console.ReadLine();
-                }
-                IC = NIC;
             }
             while (true);
         }
 
+
     }
-
-
+    
 }
 

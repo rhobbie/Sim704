@@ -260,4 +260,204 @@ namespace Sim704
                 }
         }
     }
+
+    public static class HollerithConverter /* Converter between Hollerith codes in CBN card format and BCD data or strings*/
+    {
+        static readonly string[] hcode = new string[64] {
+             "0",    "1",    "2",    "3",    "4",    "5",    "6",    "7",    "8",    "9",    "8-2",    "8-3",     "8-4",    "8-5",    "8-6",    "8-7",
+            "12", "12-1", "12-2", "12-3", "12-4", "12-5", "12-6", "12-7", "12-8", "12-9", "12-8-2", "12-8-3",  "12-8-4", "12-8-5", "12-8-6", "12-8-7",
+            "11", "11-1", "11-2", "11-3", "11-4", "11-5", "11-6", "11-7", "11-8", "11-9", "11-8-2", "11-8-3",  "11-8-4", "11-8-5", "11-8-6", "11-8-7",
+              "",  "0-1",  "0-2",  "0-3",  "0-4",  "0-5",  "0-6",  "0-7",  "0-8",  "0-9",  "0-8-2",  "0-8-3",   "0-8-4",  "0-8-5",  "0-8-6",  "0-8-7" };
+        static int[] bcd2hollerith;
+        static Dictionary<int, byte> hollerith2bcd;
+        static HollerithConverter()
+        {
+            bcd2hollerith = new int[64];
+            hollerith2bcd = new Dictionary<int, byte>();
+            for (byte i = 0; i < 64; i++)
+            {
+                int w = 0;
+
+                string[] s = hcode[i].Split(new char[] { '-' });
+                foreach (string c in s)
+                    if (c != "")
+                    {
+                        int d = Convert.ToInt32(c);
+                        if (d < 10)
+                            d = 10 - d;
+                        w |= 1 << (d - 1);
+                    }
+                bcd2hollerith[i] = w;
+                hollerith2bcd.Add(w, i);
+            }
+        }
+        public static int CBNToBCD(byte[] trecord, int start, int length, out byte[] bcd) /* Wandle Hollerith Column Binary Format zu BCD */
+        {                                                                            /* rückgabe anzahl ungütiger Hollerith codes */
+            bcd = new byte[length];
+            int err = 0;
+            for (int i = 0, x = start * 2; i < length; i++, x += 2)
+            {
+                int w = (trecord[x] << 6) | trecord[x + 1];
+                if (hollerith2bcd.TryGetValue(w, out byte value))
+                    bcd[i] = value;
+                else
+                {
+                    bcd[i] = 0x30;  /* ungültig */
+                    err++;
+                }
+            }
+            return err;
+        }
+        public static void BCDToCBN(byte[] bcd, int start, byte[] trecord) /* Wandle BCD zu Hollerith Column Binary  */
+        {
+            int x = start * 2;
+            foreach (byte b in bcd)
+            {
+                if (0 != (b & 0xC0))
+                    throw new FormatException("invalid BCD char");
+                int w = bcd2hollerith[b];
+                trecord[x] = (byte)((w >> 6) & 0x3f);
+                trecord[x + 1] = (byte)(w & 0x3f);
+                x += 2;
+            }
+        }
+        public static int CBNToString(byte[] trecord, int start, int length, out string s) /* Wandle Hollerith Column Binary Format zu string */
+        {
+            int err;/* rückgabe anzahl ungütiger Hollerith codes */
+            err = CBNToBCD(trecord, start, length, out byte[] bcd);
+            s = BcdConverter.BcdToString(bcd);
+            return err;
+        }
+        public static void StringToCBN(string s, int start, byte[] trecord) /* Wandle string zu Hollerith Column Binary  */
+        {
+            BCDToCBN(BcdConverter.StringToBcd(s), start, trecord);
+        }
+    }
+    public static class BcdConverter/* Converter betwen BCD data and char/string data */
+    {
+        /* Umwandlung bcd mem format nach char, quelle: fortran-ii listing, listtape.c */
+        static int[] bcd2asc = new int[64]; /*  6 bit bcd to char, wert 10dez ungültig, ergibt -1 */
+        static Dictionary<char, int> asc2bcd;
+        static readonly string[] ibm704bcd = new string[] /* Umwandlungstabelle, Erste zwei Zeichen Oktalwert, drittes Zeichen Charwert */
+        {
+            "000",
+            "011",
+            "022",
+            "033",
+            "044",
+            "055",
+            "066",
+            "077",
+            "108",
+            "119",
+            "12_",  /* Soll: b durchgestrichen ␢  slashed b substitute blank SM670000 Substitute Blank [That is the small b shape with slash.]  U+2422 BLANK SYMBOL */
+            "13=",  /* Report # */                
+            "14'",  /* Report @ */
+            "15:",
+            "16>",
+            "17{",  /* auch &"  Soll Wurzel: √ square root tape mark*/
+            "20+",  /* Report & */
+            "21A",
+            "22B",
+            "23C",
+            "24D",
+            "25E",
+            "26F",
+            "27G",
+            "30H",
+            "31I",
+            "32?",
+            "33.",
+            "34)", /* Report Kleines quadrat ⌑ SM490000	Lozenge U+2311 SQUARE LOZENGE */
+            "35[",
+            "36<",
+            "37}", /*auch %| soll: Senkrechter strich dreimal durchgestrichen  SS970000 Group Mark [Vertical bar across three short horizontal bars]  U+241D SYMBOL FOR GROUP SEPARATOR ␝ */
+            "40-",
+            "41J",
+            "42K",
+            "43L",
+            "44M",
+            "45N",
+            "46O",
+            "47P",
+            "50Q",
+            "51R",
+            "52!",
+            "53$",
+            "54*",
+            "55]",
+            "56;",
+            "57^", /* auch _ soll: dreieck ∆ Δ Greek capital delta mode change*/
+            "60 ",
+            "61/",
+            "62S",
+            "63T",
+            "64U",
+            "65V",
+            "66W",
+            "67X",
+            "70Y",
+            "71Z",
+            "72|", /* auch #  soll: senkrechter strich zweimal durchgestrichen ‡ ‡  not equals record mark SS950000 Record Mark [Vertical bar across two short horizontal bars]  U+241E SYMBOL FOR RECORD SEPARATOR  U+29E7 THERMODYNAMIC [Vertical bar across two short horizontal bars] */
+            "73,",
+            "74(", /* Report: % */
+            "75~", /* auch ^` soll: inverses ^  ˅ γ U+02C7 ˇ caron  inverted caret or equals  word separator  U+22CE CURLY LOGICAL OR */
+            "76\\",
+            "77\"" /* auch { soll: wagerechter strich 3 mal durchgestrichen ⧻ triple vertical bar slashed segment mark SS960000 Segment Mark [Horizontal bar across 3 short verticals]   U+241F SYMBOL FOR UNIT SEPARATOR U+29FB TRIPLE PLUS [Horizontal bar across three short verticals] */
+        };
+        static BcdConverter() /* statischer Konstruktor */
+        {
+            int i;
+            asc2bcd = new Dictionary<char, int>();
+            for (i = 0; i < ibm704bcd.Length; i++)
+            {
+                int b = Convert.ToInt32(ibm704bcd[i].Substring(0, 2), 8);
+                if (bcd2asc[b] != 0 || b != i)
+                    throw new Exception("BcdConverter: error in bcd table");
+                char c = ibm704bcd[i][2];
+                bcd2asc[b] = c;
+                char cl = Char.ToLower(c);
+                asc2bcd.Add(c, b);
+                if (cl != c)
+                    asc2bcd.Add(cl, b);
+            }
+        }
+        public static char BcdToChar(byte bcd) /* wandelt BCD nach char mit Prüfung */
+        {
+            if (0 != (bcd & 0xC0u)) /* bits 7 oder 6 müssen Null sein */
+                throw new Exception("BcdConverter:invalid BCD char");
+            if (bcd2asc[bcd] == -1)
+            {
+                Console.Write("{0} ", Convert.ToString(bcd, 8).PadLeft(2, '0'));
+                return '?';
+            }
+            return (char)bcd2asc[bcd];
+        }
+        public static byte CharToBcd(char chr)/* wandelt char nach BCD mit Prüfung */
+        {
+            if (asc2bcd.TryGetValue(chr, out int v))
+            {
+                return (byte)v;
+            }
+            else
+            {
+                Console.WriteLine("invalid Char {0}", chr);
+                return (byte)asc2bcd['?'];
+            }
+        }
+        public static byte[] StringToBcd(string s)/* wandelt string nach BCD Array */
+        {
+            byte[] B = new byte[s.Length];
+            for (int i = 0; i < s.Length; i++)
+                B[i] = CharToBcd(s[i]);
+            return B;
+        }
+        public static string BcdToString(byte[] bcd) /* wandelt BCD array string char mit Prüfung */
+        {
+            StringBuilder s = new StringBuilder(bcd.Length);
+            foreach (byte b in bcd)
+                s.Append(BcdToChar(b));
+            return s.ToString();
+        }
+    }
 }

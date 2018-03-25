@@ -13,22 +13,34 @@ namespace Sim704
 
     class Program
     {
-        static void WriteFileConfig(Config704 config, string path)
-        {
-            XmlSerializer SerializerObj = new XmlSerializer(typeof(Config704));
-            TextWriter WriteFileStream = new StreamWriter(path);
-            SerializerObj.Serialize(WriteFileStream, config);
-            WriteFileStream.Close();
-        }
+        
 
 
 
         static void Main(string[] args)
         {
-
+            if (args.Length != 1)
+            { 
+                Console.WriteLine("Usage Sim704 config.xml");
+                return;
+            }
+            Bootdev boot=Io704.Init(args[0]);
+            //Io704.WriteFileConfig(@"C:\temp\t.xml");            
             AppDomain.CurrentDomain.ProcessExit += new EventHandler(Io704.OnProcessExit);
+            
+            switch (boot)
+            {
+                case Bootdev.CRD:
+                    CPU704.LoadCrd();
+                    break;
+                case Bootdev.DRM:
+                    CPU704.LoadDrm();
+                    break;
+                case Bootdev.MT:
+                    CPU704.LoadTape();
+                    break;
+            }
 
-            CPU704.LoadTape();
         }
     }
 }
