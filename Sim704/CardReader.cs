@@ -26,7 +26,7 @@ namespace Sim704
             if (f != null)
                 throw new InvalidOperationException("Deck already mounted");
             if (file != null)
-                f = new TapeFile(file, FileAccess.Read);
+                f = new TapeFile(file, true);
             else
                 f = null;
             cardwasread = false;

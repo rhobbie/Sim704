@@ -85,7 +85,7 @@ namespace Sim704
         static bool Idiv(bool dvh)
         {
             int shiftcnt = 35;
-            MQ = new W36();
+            
             /* Save sign */
             W1 f1 = SR.S;
             SR.S = new W1();
@@ -500,8 +500,7 @@ namespace Sim704
              * are unchanged. */
 
             W36 tmp = CoreMemory.C(Y);
-            AC = new W38 { S = (W1)~tmp.S, M37 = (W37)tmp.M };
-            Iadd();
+            AC = new W38 { S = (W1)~tmp.S, M37 = (W37)tmp.M };            
         }
         public static void SUB(WA Y) /* Subtract */
         {
@@ -657,7 +656,7 @@ namespace Sim704
         public static void SSM() /* Set Sign Minus */
         {
             /* A negative sign replaces the C(AC)S.*/
-            AC.S = new W1();
+            AC.S = new W1(1);
         }
         #endregion
         #region Logical Operations

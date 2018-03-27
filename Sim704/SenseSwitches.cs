@@ -15,9 +15,9 @@ namespace Sim704
                 for (int i = 0; i < 6; i++)
                     Switches[i] = init[i];
         }
-        public static int Test(uint unit)
+        public static uint SWT(uint unit) /* Sense switch test */
         {
-            return Switches[unit - 1] ? 1 : 0;
+            return Switches[unit - 1]?1U:0;
         }
     }
 }

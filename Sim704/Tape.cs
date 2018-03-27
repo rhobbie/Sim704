@@ -19,12 +19,15 @@ namespace Sim704
         bool WriteActive; /* write is active */
 
         int PosInRecord; /* index in RRecord for next read word */
+
         void EndRW() /* finish current reading or writing operation */
         {
             if (ReadActive)
             {
                 RRecord = null;
                 ReadActive = false;
+                if (Io704.Config.logIO)
+                    Console.WriteLine("Tape {0} end read", unit);
             }
             if (WriteActive)
             {
@@ -42,7 +45,7 @@ namespace Sim704
                 }
                 f.WriteRecord(wbin, tr);
                 if (Io704.Config.logIO)
-                    Console.WriteLine("Tape {0} record {1} with length {2} written", unit, f.NumOfRecords(), tr.Length);                
+                    Console.WriteLine("Tape {0}: {1} record {2} with length {3} written",unit, wbin ? "binary" : "BCD", f.NumOfRecords(), tr.Length);
                 WriteActive = false;
                 WRecord.Clear();
             }
@@ -56,14 +59,14 @@ namespace Sim704
 
             WRecord = new List<ulong>();
         }
-        public void MountTape(string file) /* Mount Tape on unit */
+        public void MountTape(string file, bool rdonly) /* Mount Tape on unit */
         {
             if (f != null)
             {
                 throw new InvalidOperationException(string.Format("tape on unit {0} already mounted", unit));
             }
             if (file != null)
-                f = new TapeFile(file);
+                f = new TapeFile(file, rdonly);
             else
                 f = null;
         }
@@ -73,15 +76,14 @@ namespace Sim704
             f.Dispose();
             f = null;
         }
-        public void RDS(bool binary) /* Read Select*/
+        public void RT(bool binary) /* Read Select*/
         {
             EndRW();
-            ALU.MQ = (W36)0;
+            //ALU.MQ = (W36)0;
             if (f == null)
                 eof = true;
             else
             {
-
                 int r = f.ReadRecord(out bool rbinary, out byte[] mrecord);
                 if (r == -1)
                 {
@@ -91,14 +93,14 @@ namespace Sim704
                 else if (r == 0)
                 {
                     if (Io704.Config.logIO)
-                        Console.WriteLine("Tape {0} record {1} with EOF read", unit, f.NumOfRecords());
-            }
+                        Console.WriteLine("Tape {0}: EOF read at record {1}", unit, f.NumOfRecords());
+                }
                 if (r < 1)
                     eof = true;
                 else
                 {
                     if (Io704.Config.logIO)
-                        Console.WriteLine("Tape {0} record {1} with length {2} read", unit,f.NumOfRecords(), mrecord.Length);
+                        Console.WriteLine("Tape {0}: {1} record {2} with length {3} read", unit,rbinary?"binary":"BCD",f.NumOfRecords(), mrecord.Length);
                     if (binary != rbinary)
                         Io704.tapecheck = true;
                     RRecord = new ulong[(mrecord.Length + 5) / 6];
@@ -116,11 +118,13 @@ namespace Sim704
             ReadActive = true;
             PosInRecord = 0;
         }
-        public void WRS(bool binary) /* Write Select*/
+        public void WT(bool binary) /* Write Select*/
         {
             EndRW();
             wbin = binary;
             WriteActive = true;
+            if (Io704.Config.logIO)
+                Console.WriteLine("Tape {0} start write {1}", unit,binary?"binary":"BDC");
         }
         public int CPY(ref ulong w) /* Copy */
         {
@@ -130,7 +134,7 @@ namespace Sim704
                 if (eof)
                 {
                     if (Io704.Config.logIO)
-                        Console.WriteLine("Tape {0} EOF",unit);
+                        Console.WriteLine("Tape {0} EOF", unit);
                     ret = 1;
                 }
                 else if (PosInRecord >= RRecord.Length)
@@ -144,14 +148,14 @@ namespace Sim704
                     w = RRecord[PosInRecord++];
                     ALU.MQ = (W36)w;
                     if (Io704.Config.logIO)
-                        Console.WriteLine("Tape {0} Read {1}", unit, ALU.MQ);
+                        Console.WriteLine("Copy {0} from Tape {1}",  ALU.MQ,unit);
                 }
             }
             else if (WriteActive)
             {
                 ALU.MQ = (W36)w;
                 if (Io704.Config.logIO)
-                    Console.WriteLine("Tape {0} Written {1}",unit, ALU.MQ);
+                    Console.WriteLine("Copy {0} to Tape {1}", ALU.MQ, unit);
                 WRecord.Add(w);
             }
             else
@@ -190,7 +194,7 @@ namespace Sim704
         protected virtual void Dispose(bool disposing) /* IDisposable-Handling */
         {
             if (disposing)
-            {               
+            {
                 // free managed resources  
                 if (f != null)
                 {

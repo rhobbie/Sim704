@@ -12,33 +12,35 @@ namespace Sim704
 
         bool WriteActive; /* write is active */
         List<ulong> WRecord; /* write record */
+        uint sense;
 
         public void MountPaper(string file)
         {
             if (f != null)
                 throw new InvalidOperationException("Paper already mounted");
             if (file != null)
-                f = new StreamWriter(file);
+                f = new StreamWriter(file,false,Encoding.ASCII);
             else
                 f = null;
             WriteActive = false;
 
-            WRecord = new List<ulong>();
+            WRecord = new List<ulong>(24);
         }
         public void UnMountPaper()
         {
             Disconnect();
-            f.Close();
             f.Dispose();
             f = null;
         }
-        public void RDS() /* Read Select*/
+        public void RPR() /* Read Printer*/
         {
-            throw new NotImplementedException("PRT-RDS");
+            throw new NotImplementedException("RPR");
         }
-        public void WRS() /* Write Select*/
+        public void WPR() /* Write Printer*/
         {
             EndRW();
+            if (Io704.Config.logIO)
+                Console.WriteLine("Printer selected");
             WriteActive = true;
         }
         void EndRW() /* finish current reading or writing operation */
@@ -46,18 +48,18 @@ namespace Sim704
             if (WriteActive)
             {
                 if (Io704.Config.logIO)
-                    Console.WriteLine("Printer: record length {0} written", WRecord.Count);
-                while (WRecord.Count != 24)
+                    Console.WriteLine("Printer: record with length {0} written", WRecord.Count);
+                while (WRecord.Count < 24)
                     WRecord.Add(0);
                 byte[] CBN = CBNConverter.ToCBN(WRecord.ToArray());
                 if (HollerithConverter.CBNToString(CBN, 0, 72, out string s) != 0)
                 {
                     throw new Exception("invalid printer data");
                 }
-                f.WriteLine(s);
-                Console.Error.WriteLine("{0}", s);
+                f.WriteLine(s);                
                 WriteActive = false;
                 WRecord.Clear();
+                sense = 0;
             }
         }
         public int CPY(ref ulong w) /* Copy */
@@ -67,7 +69,7 @@ namespace Sim704
             {
                 ALU.MQ = (W36)w;
                 if (Io704.Config.logIO)
-                    Console.WriteLine("Printer Written {1}", ALU.MQ);
+                    Console.WriteLine("Copy to Printer {0}", ALU.MQ);
                 WRecord.Add(w);
                 if (WRecord.Count == 24)
                     EndRW();
@@ -76,8 +78,21 @@ namespace Sim704
                 throw new InvalidOperationException("CPY while device not selected");
             return ret;
         }
-        public void Disconnect() /* Disconnect from Device */
+        public uint SPT() /* Sense Printer test */
         {
+            if (Io704.Config.logIO)
+                Console.WriteLine("Sense Printer Test");
+            return sense == 7?1u:0;
+        }
+        public void SPR(uint unit) /* Sense Printer */
+        {
+            sense = unit;
+            f.WriteLine("§{0}", unit);
+            if (Io704.Config.logIO)
+                Console.WriteLine("Sense Printer {0}", unit);
+        }
+        public void Disconnect() /* Disconnect from Device */
+        {            
             EndRW();
         }
         public void Dispose() /* IDisposable-Handling */
@@ -94,5 +109,6 @@ namespace Sim704
                 }
             }
         }
+
     }
 }

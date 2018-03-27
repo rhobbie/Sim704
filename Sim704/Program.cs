@@ -33,7 +33,7 @@ namespace Sim704
                 case Bootdev.CRD:
                     CPU704.LoadCrd();
                     break;
-                case Bootdev.DRM:
+                case Bootdev.DR:
                     CPU704.LoadDrm();
                     break;
                 case Bootdev.MT:

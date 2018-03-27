@@ -20,13 +20,13 @@ namespace Sim704
             ReadActive = false;
             WriteActive = false;
         }
-        public void RDS() /* Read Select*/
+        public void RDR() /* Read Drum*/
         {
             ReadActive = true;
             WriteActive = false;
             DrumAddress = 0;
         }
-        public void WRS() /* Write Select*/
+        public void WDR() /* Write Drum*/
         {            
             ReadActive = false;
             WriteActive = true;

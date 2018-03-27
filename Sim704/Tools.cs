@@ -17,7 +17,7 @@ namespace Sim704
         {
             return recpos.Count;
         }
-        public TapeFile(string name, FileAccess Acc)
+        public TapeFile(string name, bool rdonly)
         {
             /* P7B Format */
             /* Ein Tape ist eine Folge von Records */
@@ -25,16 +25,11 @@ namespace Sim704
             /* Das erste Byte des Records hat Bit 7 gesetzt, alle folgenden Bytes des Records haben Bit 7 nicht gesetzt*/
             /* bcd record mit länge 1 und wert 15 ist EOF Marker */
 
-            f = new FileStream(name, FileMode.OpenOrCreate, Acc);
+            f = new FileStream(name, rdonly ? FileMode.Open:FileMode.OpenOrCreate, rdonly? FileAccess.Read:FileAccess.ReadWrite);
             recpos = new Stack<long>();
             stored = false;
         }
-        public TapeFile(string name)
-        {
-            f = new FileStream(name, FileMode.OpenOrCreate, FileAccess.ReadWrite);
-            recpos = new Stack<long>();
-            stored = false;
-        }
+
         public int ReadRecord(out bool binary, out byte[] mrecord) /* liest ein record als array von 6-bit werten aus tape-file, rückgabe -1:ende der eingabedatei, 0: EOF, 1: record gelesen; binary true: binärformat false: bcdformat */
         {
             int b; /* aktuelles zeichen */
@@ -54,7 +49,7 @@ namespace Sim704
             recpos.Push(f.Position - 1); /* store startposition of record for Backspace*/
             if ((b & 128) == 0)  /* das erste zeichen eines records muss msb gesetzt haben */
                 throw new InvalidDataException("TapeFile:Bit 8 not set at record start");
-            List<byte> trecord = new List<byte>(160) { (byte)(b & 127) }; /* record start marker entfernen, zeichen speichern */
+            List<byte> trecord = new List<byte>() { (byte)(b & 127) }; /* record start marker entfernen, zeichen speichern */
             do
             {
                 b = f.ReadByte();
@@ -70,7 +65,7 @@ namespace Sim704
             TapeConverter.FromTape(trecord.ToArray(), out binary, out mrecord);
             if (!binary && mrecord.Length == 1 && mrecord[0] == 15)
                 return 0; /* EOF */
-            return 1; /* kein end of file */
+            return 1; /* no EOF */
         }
         public void BackSpace()
         {
@@ -98,6 +93,8 @@ namespace Sim704
             recpos.Push(f.Position);
             trecord[0] |= 0x80;
             f.Write(trecord, 0, trecord.Length);
+            if (f.Position != f.Length)  /* not at end of file */
+                f.SetLength(f.Position); /* cut remaining parts */
 
         }
         public void WriteEOF()
@@ -214,7 +211,7 @@ namespace Sim704
                 {
                     int c = tape2mem[trecord[j] & 63];   /* bcddaten konverteren */
                     if (c == -1) /*  (0 auf tape) -> ungültig */
-                        throw new InvalidDataException("TapeConverter:invalid BCD char 0 on tape");
+                        throw new InvalidDataException("TapeConverter:invalid BCD char on tape");
                     mrecord[j] = (byte)c; /* speichern*/
                 }
             }
@@ -433,17 +430,12 @@ namespace Sim704
             }
             return (char)bcd2asc[bcd];
         }
-        public static byte CharToBcd(char chr)/* wandelt char nach BCD mit Prüfung */
+        public static byte CharToBcd(char chr)/* wandelt char nach BCD */
         {
             if (asc2bcd.TryGetValue(chr, out int v))
-            {
                 return (byte)v;
-            }
             else
-            {
-                Console.WriteLine("invalid Char {0}", chr);
                 return (byte)asc2bcd['?'];
-            }
         }
         public static byte[] StringToBcd(string s)/* wandelt string nach BCD Array */
         {
@@ -452,7 +444,7 @@ namespace Sim704
                 B[i] = CharToBcd(s[i]);
             return B;
         }
-        public static string BcdToString(byte[] bcd) /* wandelt BCD array string char mit Prüfung */
+        public static string BcdToString(byte[] bcd) /* wandelt BCD array string char */
         {
             StringBuilder s = new StringBuilder(bcd.Length);
             foreach (byte b in bcd)

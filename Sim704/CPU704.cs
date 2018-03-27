@@ -702,12 +702,18 @@ namespace Sim704
     struct WA
     {
         static uint wmask; /* mask for word */
-
+        static int olen; /* octal lenght */
         uint w; /* N bit Word stored in 32 bit uint*/
 
         public static void SetMask(uint AddressMask)
         {
+            olen = 0;
             wmask = AddressMask;
+            while(AddressMask!=0)
+            {
+                AddressMask >>= 3;
+                olen++;
+            }
         }
         public WA(uint value)
         {
@@ -723,7 +729,7 @@ namespace Sim704
         }
         public override string ToString()
         {
-            return Convert.ToString(w, 8).PadLeft(5, '0');
+            return Convert.ToString(w, 8).PadLeft(olen, '0');
         }
     }
     static class CPU704
@@ -794,12 +800,12 @@ namespace Sim704
         static W36 SR;
         static void Debug(string OPC)
         {
-            Console.Write("0{0} {1} {2}                      {3} {4} {5}  {6}   ", ILC, ALU.AC.ACToString(), ALU.MQ.MQtoString(), X[0], X[1], X[2], SR.MQtoString());
+            Console.Write("{0} {1} {2} {3} {4} {5}  {6}   ", ILC, ALU.AC.ACToString(), ALU.MQ.MQtoString(), X[0], X[1], X[2], SR.MQtoString());
             Console.WriteLine(OPC);
         }
         static void DebugAT(string OPC)
         {
-            Console.Write("0{0} {1} {2}                      {3} {4} {5}  {6}   ", ILC, ALU.AC.ACToString(), ALU.MQ.MQtoString(), X[0], X[1], X[2], SR.MQtoString());
+            Console.Write("{0} {1} {2} {3} {4} {5}  {6}   ", ILC, ALU.AC.ACToString(), ALU.MQ.MQtoString(), X[0], X[1], X[2], SR.MQtoString());
             Console.Write(OPC);
             if (SR.T != 0)
                 Console.WriteLine(" {0},{1}", SR.A, SR.T);
@@ -808,13 +814,13 @@ namespace Sim704
         }
         static void DebugAT0(string OPC)
         {
-            Console.Write("0{0} {1} {2}                      {3} {4} {5}  {6}   ", ILC, ALU.AC.ACToString(), ALU.MQ.MQtoString(), X[0], X[1], X[2], SR.MQtoString());
+            Console.Write("{0} {1} {2} {3} {4} {5}  {6}   ", ILC, ALU.AC.ACToString(), ALU.MQ.MQtoString(), X[0], X[1], X[2], SR.MQtoString());
             Console.Write(OPC);
             Console.WriteLine(" {0},{1}", SR.A, SR.T);
         }
         static void DebugATD(string OPC)
         {
-            Console.Write("0{0} {1} {2}                      {3} {4} {5}  {6}   ", ILC, ALU.AC.ACToString(), ALU.MQ.MQtoString(), X[0], X[1], X[2], SR.MQtoString());
+            Console.Write("{0} {1} {2} {3} {4} {5}  {6}   ", ILC, ALU.AC.ACToString(), ALU.MQ.MQtoString(), X[0], X[1], X[2], SR.MQtoString());
             Console.Write(OPC);
             Console.WriteLine(" {0},{1},{2}", SR.A, SR.T, SR.D);
         }
@@ -1567,6 +1573,7 @@ namespace Sim704
                                     if (S == 0) /* +760 PSE Plus sense*/
                                     {
                                         string Opc = "PSE";
+#if false
                                         switch (unit)
                                         {
                                             case 1:
@@ -1591,12 +1598,21 @@ namespace Sim704
                                                     Opc = "SPR";
                                                 break;
                                         }
-                                        DebugAT(Opc);
+#endif
+                                        if (unit == 6 && subunit == 0)
+                                            Debug("SLF");
+                                        else if (unit==6&&subunit!=0)
+                                            Debug("SLN" + subunit.ToString());
+                                        else if (unit == 7)
+                                            Debug("SWT" + subunit.ToString());
+                                        else
+                                            DebugAT(Opc);
                                         skip = (uint)Io704.PSE(GetY(SR));
                                     }
                                     else /* +760 MSE Minus sense*/
                                     {
                                         string Opc = "MSE";
+#if false
                                         switch (unit)
                                         {
                                             case 8:
@@ -1605,7 +1621,11 @@ namespace Sim704
                                             default:
                                                 break;
                                         }
-                                        DebugAT(Opc);
+#endif
+                                        if (unit == 6)
+                                            Debug("SLT" + subunit.ToString());
+                                        else
+                                            DebugAT(Opc);
                                         skip = (uint)Io704.MSE(GetY(SR));
                                     }
                                 }
@@ -1614,7 +1634,7 @@ namespace Sim704
                         case 497:/*761*/
                             if (S == 0) /* +761 NOP No Operation*/
                             {
-                                DebugAT("NOP");
+                                Debug("NOP");
                             }
                             else
                             {
@@ -1628,6 +1648,7 @@ namespace Sim704
                             {
                                 uint unit = GetY(SR);
                                 string OPcode = "RDS";
+#if printunits
                                 switch (unit >> 4)
                                 {
                                     case 8: /* BCD Tape */
@@ -1640,7 +1661,7 @@ namespace Sim704
                                         OPcode = "RDR";
                                         break;
                                     case 13: /* Card Reader */
-                                        //OPcode = "RCD";
+                                        OPcode = "RCD";
                                         break;
                                     case 15: /* Printer */
                                         OPcode = "RPR";
@@ -1648,6 +1669,7 @@ namespace Sim704
                                     default:
                                         throw new InvalidOperationException("RDS");
                                 }
+#endif
                                 DebugAT(OPcode);
                                 Io704.RDS(unit);
                             }
@@ -1673,7 +1695,7 @@ namespace Sim704
                         case 500:/*764*/
                             if (S == 0) /* +764 BST Backspace Tape */
                             {
-                                DebugAT("BST");
+                                DebugAT("BSR");
                                 Io704.BST(GetY(SR));
                             }
                             else
@@ -1699,6 +1721,7 @@ namespace Sim704
                             {
                                 uint unit = GetY(SR);
                                 string OPcode = "WRS";
+#if printunits
                                 switch (unit >> 4)
                                 {
                                     case 1: /* CRT */
@@ -1708,7 +1731,7 @@ namespace Sim704
                                         OPcode = "WTD";
                                         break;
                                     case 9: /* Bin Tape */
-                                        //OPcode = "WTB";
+                                        OPcode = "WTB";
                                         break;
                                     case 12: /* Drum */
                                         OPcode = "WDR";
@@ -1726,6 +1749,7 @@ namespace Sim704
                                         OPcode = "WPR";
                                         break;
                                 }
+#endif
                                 DebugAT(OPcode);
                                 Io704.WRS(unit);
                             }
@@ -1868,7 +1892,7 @@ namespace Sim704
                         repeat = false;
                     }
                     if (halt)
-                        Console.WriteLine("HALT at {0}", ILC);
+                        Console.Error.WriteLine("HALT at {0}", ILC);
                     string l = Console.ReadLine();
                     halt = false;
                     if (l == "x")

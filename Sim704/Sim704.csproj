@@ -71,6 +71,7 @@
     <Compile Include="Printer.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="CardPunch.cs" />
     <Compile Include="SenseLights.cs" />
     <Compile Include="SenseSwitches.cs" />
     <Compile Include="Tape.cs" />
