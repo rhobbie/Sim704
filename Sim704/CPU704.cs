@@ -800,29 +800,41 @@ namespace Sim704
         static W36 SR;
         static void Debug(string OPC)
         {
-            Console.Write("{0} {1} {2} {3} {4} {5}  {6}   ", ILC, ALU.AC.ACToString(), ALU.MQ.MQtoString(), X[0], X[1], X[2], SR.MQtoString());
-            Console.WriteLine(OPC);
+            if(Io704.Config.logCPU||halt)
+            { 
+                Console.Write("{0} {1} {2} {3} {4} {5}  {6}   ", ILC, ALU.AC.ACToString(), ALU.MQ.MQtoString(), X[0], X[1], X[2], SR.MQtoString());
+                Console.WriteLine(OPC);
+            }
         }
         static void DebugAT(string OPC)
         {
-            Console.Write("{0} {1} {2} {3} {4} {5}  {6}   ", ILC, ALU.AC.ACToString(), ALU.MQ.MQtoString(), X[0], X[1], X[2], SR.MQtoString());
-            Console.Write(OPC);
-            if (SR.T != 0)
-                Console.WriteLine(" {0},{1}", SR.A, SR.T);
-            else
-                Console.WriteLine(" {0}", SR.A);
+            if (Io704.Config.logCPU || halt)
+            {
+                Console.Write("{0} {1} {2} {3} {4} {5}  {6}   ", ILC, ALU.AC.ACToString(), ALU.MQ.MQtoString(), X[0], X[1], X[2], SR.MQtoString());
+                Console.Write(OPC);
+                if (SR.T != 0)
+                    Console.WriteLine(" {0},{1}", SR.A, SR.T);
+                else
+                    Console.WriteLine(" {0}", SR.A);
+            }
         }
         static void DebugAT0(string OPC)
         {
-            Console.Write("{0} {1} {2} {3} {4} {5}  {6}   ", ILC, ALU.AC.ACToString(), ALU.MQ.MQtoString(), X[0], X[1], X[2], SR.MQtoString());
-            Console.Write(OPC);
-            Console.WriteLine(" {0},{1}", SR.A, SR.T);
+            if (Io704.Config.logCPU || halt)
+            {
+                Console.Write("{0} {1} {2} {3} {4} {5}  {6}   ", ILC, ALU.AC.ACToString(), ALU.MQ.MQtoString(), X[0], X[1], X[2], SR.MQtoString());
+                Console.Write(OPC);
+                Console.WriteLine(" {0},{1}", SR.A, SR.T);
+            }
         }
         static void DebugATD(string OPC)
         {
-            Console.Write("{0} {1} {2} {3} {4} {5}  {6}   ", ILC, ALU.AC.ACToString(), ALU.MQ.MQtoString(), X[0], X[1], X[2], SR.MQtoString());
-            Console.Write(OPC);
-            Console.WriteLine(" {0},{1},{2}", SR.A, SR.T, SR.D);
+            if (Io704.Config.logCPU || halt)
+            {
+                Console.Write("{0} {1} {2} {3} {4} {5}  {6}   ", ILC, ALU.AC.ACToString(), ALU.MQ.MQtoString(), X[0], X[1], X[2], SR.MQtoString());
+                Console.Write(OPC);
+                Console.WriteLine(" {0},{1},{2}", SR.A, SR.T, SR.D);
+            }
         }
         static public bool Step()
         {
@@ -908,8 +920,8 @@ namespace Sim704
                         case 0: /*000*/
                             if (S == 0) /*+000 HTR Halt and Transfer*/
                             {
-                                DebugAT("HTR");
                                 halt = true;
+                                DebugAT("HTR");                                
                                 transferInst = true;
                                 doTransfer = true;
                                 NIC = GetY(SR);
@@ -1066,9 +1078,9 @@ namespace Sim704
                             break;
                         case 144: /*220*/
                             if (S == 0) /*+220 DVH Divide or HALT*/
-                            {
-                                DebugAT("DVH");
+                            {                                
                                 halt = ALU.DVH(GetY(SR));
+                                DebugAT("DVH");
                             }
                             else
                             {
@@ -1090,9 +1102,9 @@ namespace Sim704
                             break;
                         case 160: /*240*/
                             if (S == 0) /*+240 FDH Floating Divide or HALT*/
-                            {
-                                DebugAT("FDH");
+                            {                                
                                 halt = ALU.FDH(GetY(SR));
+                                DebugAT("FDH");
                             }
                             else
                             {
@@ -1223,8 +1235,8 @@ namespace Sim704
                         case 272: /*420*/
                             if (S == 0) /*+420 HTR Halt and Proceed*/
                             {
-                                DebugAT("HPR");
                                 halt = true;
+                                DebugAT("HPR");                                
                             }
                             else
                             {
@@ -1672,6 +1684,8 @@ namespace Sim704
 #endif
                                 DebugAT(OPcode);
                                 Io704.RDS(unit);
+                                if (halt && repeat && !Io704.Config.logCPU)
+                                    DebugAT(OPcode);
                             }
                             else
                             {

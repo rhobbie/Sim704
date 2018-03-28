@@ -18,6 +18,7 @@ namespace Sim704
         public int MemSize;
         public Bootdev boot;        
         public bool logIO;
+        public bool logCPU;
     }
     interface I704dev
     {
@@ -28,6 +29,7 @@ namespace Sim704
     {
         /* Device numbers*/
         public static bool tapecheck;
+        public static bool tapeindicator;
         static CardReader CRD = null;
         static Printer LP = null;
         static CardPunch CPU = null; 
@@ -263,7 +265,14 @@ namespace Sim704
         }
         public static uint ETT() /* End of Tape Test */
         {
-            throw new NotImplementedException("ETT");
+            uint ret = 1u;
+            if(tapeindicator)
+            {
+                tapeindicator = false;
+                ret = 0;
+            }
+            return ret;
+
         }
         public static void LDA(uint address) /* Locate Drum Address */
         {
