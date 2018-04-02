@@ -72,8 +72,8 @@ namespace Sim704
             {
                 w = Buffer[DrumAddress];
                 ALU.MQ = (W36)w;
-                if (Io704.Config.logIO)
-                    Console.WriteLine("Drum {0} Read {1} from Address {2}", unit, ALU.MQ, (W15)DrumAddress);
+                if (Io704.Config.LogIO!=null)
+                    Io704.LogIO.WriteLine("Drum {0} Read {1} from Address {2}", unit, ALU.MQ, (W15)DrumAddress);
                 DrumAddress++;
                 if (DrumAddress >= Buffer.Length)
                     DrumAddress = 0;
@@ -81,8 +81,8 @@ namespace Sim704
             else if (WriteActive)
             {
                 ALU.MQ = (W36)w;
-                if (Io704.Config.logIO)
-                    Console.WriteLine("Drum {0} Written {1} to Address {2}", unit, ALU.MQ, (W15)DrumAddress);
+                if (Io704.Config.LogIO!=null)
+                    Io704.LogIO.WriteLine("Drum {0} Written {1} to Address {2}", unit, ALU.MQ, (W15)DrumAddress);
                 Buffer[DrumAddress++] = w;
                 if (DrumAddress >= Buffer.Length)
                     DrumAddress = 0;

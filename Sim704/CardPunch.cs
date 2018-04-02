@@ -34,8 +34,8 @@ namespace Sim704
         {            
             if (WriteActive)
             {
-                if (Io704.Config.logIO)
-                    Console.WriteLine("Punch: record with length {0} written", WRecord.Count);
+                if (Io704.Config.LogIO!=null)
+                    Io704.LogIO.WriteLine("Punch: record with length {0} written", WRecord.Count);
                 while (WRecord.Count < 24)
                     WRecord.Add(0);
                 byte[] CBN = CBNConverter.ToCBN(WRecord.ToArray());
@@ -47,8 +47,8 @@ namespace Sim704
         public void WPU() /* Write Punch*/
         {
             EndRW();
-            if (Io704.Config.logIO)
-                Console.WriteLine("Punch selected");
+            if (Io704.Config.LogIO!=null)
+                Io704.LogIO.WriteLine("Punch selected");
             WriteActive = true;
         }
         public int CPY(ref ulong w) /* Copy */
@@ -57,8 +57,8 @@ namespace Sim704
             if (WriteActive)
             {
                 ALU.MQ = (W36)w;
-                if (Io704.Config.logIO)
-                    Console.WriteLine("Copy to punch {0}", ALU.MQ);
+                if (Io704.Config.LogIO!=null)
+                    Io704.LogIO.WriteLine("Copy to punch {0}", ALU.MQ);
                 WRecord.Add(w);
                 if (WRecord.Count >= 24)
                     EndRW();
@@ -69,7 +69,7 @@ namespace Sim704
         }
         public void SPU(uint unit) /* Sense Punch */
         {            
-            Console.WriteLine("Sense Punch {0}", unit);
+            Io704.LogIO.WriteLine("Sense Punch {0}", unit);
             throw new NotImplementedException("SPU");
         }
         public void Disconnect() /* Disconnect from Device */

@@ -1,6 +1,7 @@
 ﻿using System;
 
 using System.IO;
+using System.Text;
 using System.Xml.Serialization;
 
 namespace Sim704
@@ -17,8 +18,8 @@ namespace Sim704
         public bool[] Switch;
         public int MemSize;
         public Bootdev boot;        
-        public bool logIO;
-        public bool logCPU;
+        public string LogIO;
+        public string LogCPU;
     }
     interface I704dev
     {
@@ -36,6 +37,8 @@ namespace Sim704
         static Drum[] DR = null;
         static Tape[] MT = null;
         static I704dev currdev = null;
+        public static StreamWriter LogIO=null;
+        public static StreamWriter LogCPU = null;
         static int currdrum=-1;
         public static Config704 Config = null;
         public static void WriteFileConfig(string path)
@@ -53,6 +56,15 @@ namespace Sim704
             ReadFileStream.Close();
             SenseSwitches.Init(Config.Switch);
             CoreMemory.Init(Config.MemSize);
+            if (Config.LogCPU != null)
+                LogCPU = new StreamWriter(Config.LogCPU,false,Encoding.ASCII);
+            if (Config.LogIO != null)
+            {
+                if (Config.LogIO == Config.LogCPU)
+                    LogIO = LogCPU;
+                else
+                    LogIO = new StreamWriter(Config.LogIO, false, Encoding.ASCII);
+            }
             return Config.boot;
         }
         static void OpenTape(uint ActiveSubUnit)
@@ -106,13 +118,11 @@ namespace Sim704
         }
         static void OpenPrinter()
         {
-            if (LP == null && Config.LP != null)
+            if (LP == null)
             {
                 LP = new Printer();
                 LP.MountPaper(Config.LP);
             }
-            if (LP == null)
-                throw new InvalidOperationException("Invalid printer selected for write");
         }
         static void OpenCardPunch()
         {
@@ -122,7 +132,16 @@ namespace Sim704
                 CPU.MountDeck(Config.CPU);
             }
             if (CPU == null)
-                throw new InvalidOperationException("Invalid printer selected for write");
+                throw new InvalidOperationException("Invalid CardPunch selected for write");
+        }
+        public static void Disconnect()
+        {
+            if (currdev != null)
+            { 
+                currdev.Disconnect();                
+            }
+            currdev = null;
+            currdrum = -1;
         }
         public static void RDS(uint unit) /* Read Select */
         {
@@ -229,36 +248,34 @@ namespace Sim704
         }
         public static void BST(uint unit) /* Backspace Tape */
         {
-            uint CurrUnit = unit >> 4;
             uint CurrSubUnit = unit & 0xF;
             if (currdev != null)
                 currdev.Disconnect();
             currdev = null;
-            if ((CurrUnit < 8) || (CurrUnit > 9) || (CurrSubUnit < 1 || CurrSubUnit > 10))
-                throw new InvalidOperationException("invalid tape for BST");
+            if ((CurrSubUnit < 1 || CurrSubUnit > 10))
+                throw new InvalidOperationException(string.Format("invalid tape {0} for BST",CurrSubUnit));
             OpenTape(CurrSubUnit);
             MT[CurrSubUnit - 1].BST();
         }
         public static void WEF(uint unit) /* Write End of File */
-        {
-            uint CurrUnit = unit >> 4;
+        {           
             uint CurrSubUnit = unit & 0xF;
             if (currdev != null)
                 currdev.Disconnect();
             currdev = null;
-            if ((CurrUnit < 8) || (CurrUnit > 9) || (CurrSubUnit < 1 || CurrSubUnit > 10))
+            if ((CurrSubUnit < 1 || CurrSubUnit > 10))
                 throw new InvalidOperationException("invalid tape for WEF");
             OpenTape(CurrSubUnit);
             MT[CurrSubUnit - 1].WEF();
         }
         public static void REW(uint unit) /* Rewind */
         {
-            uint CurrUnit = unit >> 4;
+          
             uint CurrSubUnit = unit & 0xF;
             if (currdev != null)
                 currdev.Disconnect();
             currdev = null;
-            if ((CurrUnit < 8) || (CurrUnit > 9) || (CurrSubUnit < 1 || CurrSubUnit > 10))
+            if (CurrSubUnit < 1 || CurrSubUnit > 10)
                 throw new InvalidOperationException("invalid tape for REW");
             OpenTape(CurrSubUnit);
             MT[CurrSubUnit - 1].REW();
@@ -358,19 +375,45 @@ namespace Sim704
                 currdev.Disconnect();
             currdev = null;
             if (CRD != null)
+            { 
                 CRD.Dispose();
+                CRD = null;
+            }
             if (CPU != null)
+            { 
                 CPU.Dispose();
+                CPU = null;
+            }
             if (MT != null)
                 for (int i = 0; i < MT.Length; i++)
                     if (MT[i] != null)
+                    { 
                         MT[i].Dispose();
+                        MT[i] = null;
+                    }
             if (DR != null)
                 for (int i = 0; i < DR.Length; i++)
                     if (DR[i] != null)
+                    { 
                         DR[i].Dispose();
+                        DR[i] = null;
+                    }
             if (LP != null)
+            { 
                 LP.Dispose();
+                LP = null;
+            }
+            if (LogCPU != null)
+            { 
+                LogCPU.Dispose();
+                LogCPU = null;
+            }
+            if (LogIO!=null)
+            {
+                if(Config.LogIO != Config.LogCPU)
+                    LogIO.Dispose();
+                LogIO = null;
+            }
             Console.Error.WriteLine("finished");
         }
     }

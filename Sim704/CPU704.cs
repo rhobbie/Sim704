@@ -709,7 +709,7 @@ namespace Sim704
         {
             olen = 0;
             wmask = AddressMask;
-            while(AddressMask!=0)
+            while (AddressMask != 0)
             {
                 AddressMask >>= 3;
                 olen++;
@@ -739,7 +739,7 @@ namespace Sim704
         public static WA ILC; /* Instruction Counter */
         public static WA NIC; /* Next Instruction Counter for Transfer*/
         static WA[] X = new WA[3]; /* Index Register */
-        public static bool halt = false;        
+        public static bool halt = false;
         static public void Clr()
         {
             ALU.Clear();
@@ -800,40 +800,66 @@ namespace Sim704
         static W36 SR;
         static void Debug(string OPC)
         {
-            if(Io704.Config.logCPU||halt)
-            { 
-                Console.Write("{0} {1} {2} {3} {4} {5}  {6}   ", ILC, ALU.AC.ACToString(), ALU.MQ.MQtoString(), X[0], X[1], X[2], SR.MQtoString());
-                Console.WriteLine(OPC);
+            if (Io704.Config.LogCPU != null)
+            {
+                Io704.LogCPU.Write("{0} {1} {2} {3} {4} {5}  {6}   ", ILC, ALU.AC.ACToString(), ALU.MQ.MQtoString(), X[0], X[1], X[2], SR.MQtoString());
+                Io704.LogCPU.WriteLine(OPC);
+            }
+            if(halt)
+            {
+                Console.Error.Write("{0} {1} {2} {3} {4} {5}  {6}   ", ILC, ALU.AC.ACToString(), ALU.MQ.MQtoString(), X[0], X[1], X[2], SR.MQtoString());
+                Console.Error.WriteLine(OPC);
             }
         }
         static void DebugAT(string OPC)
         {
-            if (Io704.Config.logCPU || halt)
+            if (Io704.Config.LogCPU != null)
             {
-                Console.Write("{0} {1} {2} {3} {4} {5}  {6}   ", ILC, ALU.AC.ACToString(), ALU.MQ.MQtoString(), X[0], X[1], X[2], SR.MQtoString());
-                Console.Write(OPC);
+                Io704.LogCPU.Write("{0} {1} {2} {3} {4} {5}  {6}   ", ILC, ALU.AC.ACToString(), ALU.MQ.MQtoString(), X[0], X[1], X[2], SR.MQtoString());
+                Io704.LogCPU.Write(OPC);
                 if (SR.T != 0)
-                    Console.WriteLine(" {0},{1}", SR.A, SR.T);
+                    Io704.LogCPU.WriteLine(" {0},{1}", SR.A, SR.T);
                 else
-                    Console.WriteLine(" {0}", SR.A);
+                    Io704.LogCPU.WriteLine(" {0}", SR.A);
+            }
+            if (halt)
+            {
+                Console.Error.Write("{0} {1} {2} {3} {4} {5}  {6}   ", ILC, ALU.AC.ACToString(), ALU.MQ.MQtoString(), X[0], X[1], X[2], SR.MQtoString());
+                Console.Error.Write(OPC);
+                if (SR.T != 0)
+                    Console.Error.WriteLine(" {0},{1}", SR.A, SR.T);
+                else
+                    Console.Error.WriteLine(" {0}", SR.A);
             }
         }
         static void DebugAT0(string OPC)
         {
-            if (Io704.Config.logCPU || halt)
+            if (Io704.Config.LogCPU != null)
             {
-                Console.Write("{0} {1} {2} {3} {4} {5}  {6}   ", ILC, ALU.AC.ACToString(), ALU.MQ.MQtoString(), X[0], X[1], X[2], SR.MQtoString());
-                Console.Write(OPC);
-                Console.WriteLine(" {0},{1}", SR.A, SR.T);
+                Io704.LogCPU.Write("{0} {1} {2} {3} {4} {5}  {6}   ", ILC, ALU.AC.ACToString(), ALU.MQ.MQtoString(), X[0], X[1], X[2], SR.MQtoString());
+                Io704.LogCPU.Write(OPC);
+                Io704.LogCPU.WriteLine(" {0},{1}", SR.A, SR.T);
+            }
+            if (halt)
+            {
+                Console.Error.Write("{0} {1} {2} {3} {4} {5}  {6}   ", ILC, ALU.AC.ACToString(), ALU.MQ.MQtoString(), X[0], X[1], X[2], SR.MQtoString());
+                Console.Error.Write(OPC);
+                Console.Error.WriteLine(" {0},{1}", SR.A, SR.T);
             }
         }
         static void DebugATD(string OPC)
         {
-            if (Io704.Config.logCPU || halt)
+            if (Io704.Config.LogCPU != null)
             {
-                Console.Write("{0} {1} {2} {3} {4} {5}  {6}   ", ILC, ALU.AC.ACToString(), ALU.MQ.MQtoString(), X[0], X[1], X[2], SR.MQtoString());
-                Console.Write(OPC);
-                Console.WriteLine(" {0},{1},{2}", SR.A, SR.T, SR.D);
+                Io704.LogCPU.Write("{0} {1} {2} {3} {4} {5}  {6}   ", ILC, ALU.AC.ACToString(), ALU.MQ.MQtoString(), X[0], X[1], X[2], SR.MQtoString());
+                Io704.LogCPU.Write(OPC);
+                Io704.LogCPU.WriteLine(" {0},{1},{2}", SR.A, SR.T, SR.D);
+            }
+            if (halt)
+            {
+                Console.Error.Write("{0} {1} {2} {3} {4} {5}  {6}   ", ILC, ALU.AC.ACToString(), ALU.MQ.MQtoString(), X[0], X[1], X[2], SR.MQtoString());
+                Console.Error.Write(OPC);
+                Console.Error.WriteLine(" {0},{1},{2}", SR.A, SR.T, SR.D);
             }
         }
         static public bool Step()
@@ -859,7 +885,7 @@ namespace Sim704
                     }
                     else
                     {
-                        Console.WriteLine("Type A operation {0}{1} not implemented", S != 0 ? '-' : '+', P);
+                        Console.Error.WriteLine("Type A operation {0}{1} not implemented", S != 0 ? '-' : '+', P);
                         halt = true;
                     }
                     break;
@@ -921,14 +947,14 @@ namespace Sim704
                             if (S == 0) /*+000 HTR Halt and Transfer*/
                             {
                                 halt = true;
-                                DebugAT("HTR");                                
+                                DebugAT("HTR");
                                 transferInst = true;
                                 doTransfer = true;
                                 NIC = GetY(SR);
                             }
                             else
                             {
-                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
                                 halt = true;
                             }
                             break;
@@ -942,20 +968,20 @@ namespace Sim704
                             }
                             else
                             {
-                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
                                 halt = true;
                             }
                             break;
                         case 17: /*021*/
                             if (S == 0) /*+20 TTR Trap Transfer*/
                             {
-                                DebugAT("TTR");                                
+                                DebugAT("TTR");
                                 doTransfer = true;
                                 NIC = GetY(SR);
                             }
                             else
                             {
-                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
                                 halt = true;
                             }
                             break;
@@ -969,7 +995,7 @@ namespace Sim704
                             }
                             else
                             {
-                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
                                 halt = true;
                             }
                             break;
@@ -984,7 +1010,7 @@ namespace Sim704
                             }
                             else
                             {
-                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
                                 halt = true;
                             }
                             break;
@@ -1046,7 +1072,7 @@ namespace Sim704
                             }
                             else
                             {
-                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
                                 halt = true;
                             }
                             break;
@@ -1060,7 +1086,7 @@ namespace Sim704
                             }
                             else
                             {
-                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
                                 halt = true;
                             }
                             break;
@@ -1078,13 +1104,13 @@ namespace Sim704
                             break;
                         case 144: /*220*/
                             if (S == 0) /*+220 DVH Divide or HALT*/
-                            {                                
+                            {
                                 halt = ALU.DVH(GetY(SR));
                                 DebugAT("DVH");
                             }
                             else
                             {
-                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
                                 halt = true;
                             }
                             break;
@@ -1096,19 +1122,19 @@ namespace Sim704
                             }
                             else
                             {
-                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
                                 halt = true;
                             }
                             break;
                         case 160: /*240*/
                             if (S == 0) /*+240 FDH Floating Divide or HALT*/
-                            {                                
+                            {
                                 halt = ALU.FDH(GetY(SR));
                                 DebugAT("FDH");
                             }
                             else
                             {
-                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
                                 halt = true;
                             }
                             break;
@@ -1120,7 +1146,7 @@ namespace Sim704
                             }
                             else
                             {
-                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
                                 halt = true;
                             }
                             break;
@@ -1180,7 +1206,7 @@ namespace Sim704
                             }
                             else
                             {
-                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
                                 halt = true;
                             }
                             break;
@@ -1192,7 +1218,7 @@ namespace Sim704
                             }
                             else
                             {
-                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
                                 halt = true;
                             }
                             break;
@@ -1216,7 +1242,7 @@ namespace Sim704
                             }
                             else
                             {
-                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
                                 halt = true;
                             }
                             break;
@@ -1228,7 +1254,7 @@ namespace Sim704
                             }
                             else
                             {
-                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
                                 halt = true;
                             }
                             break;
@@ -1236,11 +1262,11 @@ namespace Sim704
                             if (S == 0) /*+420 HTR Halt and Proceed*/
                             {
                                 halt = true;
-                                DebugAT("HPR");                                
+                                DebugAT("HPR");
                             }
                             else
                             {
-                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
                                 halt = true;
                             }
                             break;
@@ -1252,7 +1278,7 @@ namespace Sim704
                             }
                             else
                             {
-                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
                                 halt = true;
                             }
                             break;
@@ -1271,7 +1297,7 @@ namespace Sim704
                         case 321: /*501*/
                             if (S == 0)
                             {
-                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
                                 halt = true;
                             }
                             else /*-501 ORA Or to Accumulator*/
@@ -1288,7 +1314,7 @@ namespace Sim704
                             }
                             else
                             {
-                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
                                 halt = true;
                             }
                             break;
@@ -1312,7 +1338,7 @@ namespace Sim704
                             }
                             else
                             {
-                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
                                 halt = true;
                             }
                             break;
@@ -1336,7 +1362,7 @@ namespace Sim704
                             }
                             else
                             {
-                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
                                 halt = true;
                             }
                             break;
@@ -1355,7 +1381,7 @@ namespace Sim704
                         case 400:/*620*/
                             if (S == 0)
                             {
-                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
                                 halt = true;
                             }
                             else /*+620 SLQ Store Left Half MQ*/
@@ -1372,7 +1398,7 @@ namespace Sim704
                             }
                             else
                             {
-                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
                                 halt = true;
                             }
                             break;
@@ -1384,7 +1410,7 @@ namespace Sim704
                             }
                             else
                             {
-                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
                                 halt = true;
                             }
                             break;
@@ -1396,14 +1422,14 @@ namespace Sim704
                             }
                             else
                             {
-                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
                                 halt = true;
                             }
                             break;
                         case 412: /*634*/
                             if (S == 0)
                             {
-                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
                                 halt = true;
                             }
                             else /*-634 SXD Store index in Decrement*/
@@ -1445,7 +1471,7 @@ namespace Sim704
                         case 492:/*754*/
                             if (S == 0)
                             {
-                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
 
                                 halt = true;
                             }
@@ -1474,7 +1500,7 @@ namespace Sim704
                                             }
                                             else
                                             {
-                                                Console.WriteLine("Operation {0}{1}...{2} not implemented ->{3}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), Convert.ToString(SR.A, 8).PadLeft(3, '0'), (uint)SR.A);
+                                                Console.Error.WriteLine("Operation {0}{1}...{2} not implemented ->{3}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), Convert.ToString(SR.A, 8).PadLeft(3, '0'), (uint)SR.A);
                                                 halt = true;
                                             }
                                             break;
@@ -1498,7 +1524,7 @@ namespace Sim704
                                             }
                                             else
                                             {
-                                                Console.WriteLine("Operation {0}{1}...{2} not implemented ->{3}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), Convert.ToString(SR.A, 8).PadLeft(3, '0'), (uint)SR.A);
+                                                Console.Error.WriteLine("Operation {0}{1}...{2} not implemented ->{3}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), Convert.ToString(SR.A, 8).PadLeft(3, '0'), (uint)SR.A);
                                                 halt = true;
                                             }
                                             break;
@@ -1522,7 +1548,7 @@ namespace Sim704
                                             }
                                             else
                                             {
-                                                Console.WriteLine("Operation {0}{1}...{2} not implemented ->{3}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), Convert.ToString(SR.A, 8).PadLeft(3, '0'), (uint)SR.A);
+                                                Console.Error.WriteLine("Operation {0}{1}...{2} not implemented ->{3}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), Convert.ToString(SR.A, 8).PadLeft(3, '0'), (uint)SR.A);
                                                 halt = true;
                                             }
                                             break;
@@ -1546,7 +1572,7 @@ namespace Sim704
                                             }
                                             else
                                             {
-                                                Console.WriteLine("Operation {0}{1}...{2} not implemented ->{3}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), Convert.ToString(SR.A, 8).PadLeft(3, '0'), (uint)SR.A);
+                                                Console.Error.WriteLine("Operation {0}{1}...{2} not implemented ->{3}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), Convert.ToString(SR.A, 8).PadLeft(3, '0'), (uint)SR.A);
                                                 halt = true;
                                             }
                                             break;
@@ -1558,7 +1584,7 @@ namespace Sim704
                                             }
                                             else
                                             {
-                                                Console.WriteLine("Operation {0}{1}...{2} not implemented ->{3}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), Convert.ToString(SR.A, 8).PadLeft(3, '0'), (uint)SR.A);
+                                                Console.Error.WriteLine("Operation {0}{1}...{2} not implemented ->{3}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), Convert.ToString(SR.A, 8).PadLeft(3, '0'), (uint)SR.A);
                                                 halt = true;
                                             }
                                             break;
@@ -1575,7 +1601,7 @@ namespace Sim704
                                             }
                                             break;
                                         default:
-                                            Console.WriteLine("Operation {0}{1}...{2} not implemented ->{3}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), Convert.ToString(SR.A, 8).PadLeft(3, '0'), (uint)SR.A);
+                                            Console.Error.WriteLine("Operation {0}{1}...{2} not implemented ->{3}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), Convert.ToString(SR.A, 8).PadLeft(3, '0'), (uint)SR.A);
                                             halt = true;
                                             break;
                                     }
@@ -1613,7 +1639,7 @@ namespace Sim704
 #endif
                                         if (unit == 6 && subunit == 0)
                                             Debug("SLF");
-                                        else if (unit==6&&subunit!=0)
+                                        else if (unit == 6 && subunit != 0)
                                             Debug("SLN" + subunit.ToString());
                                         else if (unit == 7)
                                             Debug("SWT" + subunit.ToString());
@@ -1650,7 +1676,7 @@ namespace Sim704
                             }
                             else
                             {
-                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
 
                                 halt = true;
                             }
@@ -1684,12 +1710,12 @@ namespace Sim704
 #endif
                                 DebugAT(OPcode);
                                 Io704.RDS(unit);
-                                if (halt && repeat && !Io704.Config.logCPU)
+                                if (halt && repeat && Io704.Config.LogCPU == null)
                                     DebugAT(OPcode);
                             }
                             else
                             {
-                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
 
                                 halt = true;
                             }
@@ -1714,7 +1740,7 @@ namespace Sim704
                             }
                             else
                             {
-                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
                                 halt = true;
                             }
                             break;
@@ -1726,7 +1752,7 @@ namespace Sim704
                             }
                             else
                             {
-                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
                                 halt = true;
                             }
                             break;
@@ -1769,7 +1795,7 @@ namespace Sim704
                             }
                             else
                             {
-                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
                                 halt = true;
                             }
                             break;
@@ -1781,7 +1807,7 @@ namespace Sim704
                             }
                             else
                             {
-                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
                                 halt = true;
                             }
                             break;
@@ -1793,7 +1819,7 @@ namespace Sim704
                             }
                             else
                             {
-                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
                                 halt = true;
                             }
                             break;
@@ -1805,7 +1831,7 @@ namespace Sim704
                             }
                             else
                             {
-                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
                                 halt = true;
                             }
                             break;
@@ -1817,14 +1843,14 @@ namespace Sim704
                             }
                             else
                             {
-                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
                                 halt = true;
                             }
                             break;
                         case 507: /*773*/
                             if (S == 0)
                             {
-                                Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
                                 halt = true;
                             }
                             else/*-773 RQL Rotate MQ Left*/
@@ -1834,24 +1860,24 @@ namespace Sim704
                             }
                             break;
                         default:
-                            Console.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
+                            Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", S != 0 ? '-' : '+', Convert.ToString(P, 8).PadLeft(3, '0'), P);
                             halt = true;
                             break;
                     }
                     break;
                 default:
-                    Console.WriteLine("Type A operation {0}{1} not implemented", S != 0 ? '-' : '+', P);
+                    Console.Error.WriteLine("Type A operation {0}{1} not implemented", S != 0 ? '-' : '+', P);
                     halt = true;
                     break;
             }
-            if(trapping&&transferInst)
+            if (trapping && transferInst)
             {
-                    WA A0 = new WA();
-                    W36 W0 = CoreMemory.C(A0);
-                    W0.A = (W15)(uint)ILC;
-                    CoreMemory.C(A0, W0);
-                    if (doTransfer)
-                        NIC = new WA(1);
+                WA A0 = new WA();
+                W36 W0 = CoreMemory.C(A0);
+                W0.A = (W15)(uint)ILC;
+                CoreMemory.C(A0, W0);
+                if (doTransfer)
+                    NIC = new WA(1);
             }
             if (!doTransfer)
                 ILC = (WA)(ILC + 1 + skip);
@@ -1865,7 +1891,7 @@ namespace Sim704
             Io704.CPY(ref CoreMemory.Mem[1]);
             ALU.MQ = new W36();
             ILC = (WA)0;
-            Go(false);
+            Go();
         }
         static public void LoadTape()
         {
@@ -1875,7 +1901,7 @@ namespace Sim704
             Io704.CPY(ref CoreMemory.Mem[1]);
             ALU.MQ = new W36();
             ILC = (WA)0;
-            Go(false);
+            Go();
         }
         static public void LoadDrm()
         {
@@ -1884,22 +1910,19 @@ namespace Sim704
             Io704.CPY(ref CoreMemory.Mem[1]);
             ALU.MQ = new W36();
             ILC = (WA)0;
-            Go(false);
+            Go();
         }
-        static public void Go(bool step)
+        static public void Go()
         {
             bool transfer = false;
-
             do
             {
-               // if (ILC == 1920)
-                 //   halt = true;
                 if (transfer)
                     ILC = NIC;
                 transfer = Step();
-                if (halt || step)
+                if (halt)
                 {
-                    
+                    Io704.Disconnect();                    
                     if (repeat)
                     {
                         ILC = (WA)(ILC - 1);
@@ -1911,14 +1934,12 @@ namespace Sim704
                     halt = false;
                     if (l == "x")
                         break;
-                    if (l.Length>=2&&l.Substring(0,2)=="go")
+                    if (l.Length >= 2 && l.Substring(0, 2) == "go")
                     {
                         string[] split = l.Split(new char[] { ' ' });
                         ILC = (WA)(uint)Convert.ToInt32(split[1], 8);
                         transfer = false;
                     }
-                    if (l == "s")
-                        step = !step;
                 }
             }
             while (true);
@@ -1926,6 +1947,6 @@ namespace Sim704
 
 
     }
-    
+
 }
 

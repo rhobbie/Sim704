@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.IO;
 namespace Sim704
 {
@@ -11,8 +9,8 @@ namespace Sim704
     {
         FileStream f;
         Stack<long> recpos; /* start positions of records in file */ 
-        bool stored;
-        int last;
+        bool stored; /* true:fist byte of record already read */
+        int last;  /* value of first byte or -1 for eom*/
         public int NumOfRecords()
         {
             return recpos.Count;
@@ -91,9 +89,9 @@ namespace Sim704
             stored = false;
             TapeConverter.ToTape(binary, mrecord, out byte[] trecord);
             recpos.Push(f.Position);
-            trecord[0] |= 0x80;
+            trecord[0] |= 0x80;  /* add record marker */
             f.Write(trecord, 0, trecord.Length);
-            if (f.Position != f.Length)  /* not at end of file */
+            if (f.Position != f.Length)  /* not at end of file? */
                 f.SetLength(f.Position); /* cut remaining parts */
 
         }
@@ -195,32 +193,37 @@ namespace Sim704
                 trecord[i] = b;
             }
         }
-        public static void FromTape(byte[] trecord, out bool binary, out byte[] mrecord) /* converts record from raw tape format into Binary/BCD record */
+        public static bool FromTape(byte[] trecord, out bool binary, out byte[] mrecord) /* converts record from raw tape format into Binary/BCD record  return value: parity error*/
         {
-            binary = oddparity[trecord[0]]; /* ungerade parität -> binärfile */
+            bool parityerror = false;
+
+            binary = oddparity[trecord[0]]; /* odd parity -> binary file */
             mrecord = new byte[trecord.Length];
             for (int j = 0; j < trecord.Length; j++)
             {
                 if ((trecord[j] & 128) != 0)
                     throw new InvalidDataException("TapeConverter:bit 7 is set on tape");
-                if (binary != oddparity[trecord[j]]) /* weitere zeichen auf parität prüfen */
-                    throw new InvalidDataException("TapeConverter:parity error on tape");
+                if (binary != oddparity[trecord[j]]) /*parity check */
+                    parityerror = true;
                 if (binary)
-                    mrecord[j] = (byte)(trecord[j] & 63); /* binärdaten direkt übernehmen */
+                    mrecord[j] = (byte)(trecord[j] & 63); /* copy binary data */
                 else
                 {
-                    int c = tape2mem[trecord[j] & 63];   /* bcddaten konverteren */
-                    if (c == -1) /*  (0 auf tape) -> ungültig */
+                    int c = tape2mem[trecord[j] & 63];   /* convert bcd data */
+                    if (c == -1) /*  (0 on bcd record) -> invalid */
                         throw new InvalidDataException("TapeConverter:invalid BCD char on tape");
-                    mrecord[j] = (byte)c; /* speichern*/
+                    mrecord[j] = (byte)c; 
                 }
             }
+            return parityerror;
         }
     }
     public static class CBNConverter /* Converter betwen binary cards in RCD format and CBN card format */
     {
         public static byte[] ToCBN(ulong[] mrecord) /* convert card from RCD Format to CBN format */
         {
+            if (mrecord.Length != 24)
+                throw new Exception("wrong record length");
             byte[] trecord = new byte[160];
             for (int y = 0; y < 12; y++)  /* for all rows */
                 for (int x = 0; x < 72; x++)  /* for all columns */
@@ -257,7 +260,6 @@ namespace Sim704
                 }
         }
     }
-
     public static class HollerithConverter /* Converter between Hollerith codes in CBN card format and BCD data or strings*/
     {
         static readonly string[] hcode = new string[64] {
@@ -332,75 +334,15 @@ namespace Sim704
     }
     public static class BcdConverter/* Converter betwen BCD data and char/string data */
     {
-        /* Umwandlung bcd mem format nach char, quelle: fortran-ii listing, listtape.c */
-        static int[] bcd2asc = new int[64]; /*  6 bit bcd to char, wert 10dez ungültig, ergibt -1 */
+        
+        static int[] bcd2asc = new int[64]; /*  6 bit bcd to char, value 10dez invalid, results to -1 */
         static Dictionary<char, int> asc2bcd;
         static readonly string[] ibm704bcd = new string[] /* Umwandlungstabelle, Erste zwei Zeichen Oktalwert, drittes Zeichen Charwert */
         {
-            "000",
-            "011",
-            "022",
-            "033",
-            "044",
-            "055",
-            "066",
-            "077",
-            "108",
-            "119",
-            "12_",  /* Soll: b durchgestrichen ␢  slashed b substitute blank SM670000 Substitute Blank [That is the small b shape with slash.]  U+2422 BLANK SYMBOL */
-            "13=",  /* Report # */                
-            "14'",  /* Report @ */
-            "15:",
-            "16>",
-            "17{",  /* auch &"  Soll Wurzel: √ square root tape mark*/
-            "20+",  /* Report & */
-            "21A",
-            "22B",
-            "23C",
-            "24D",
-            "25E",
-            "26F",
-            "27G",
-            "30H",
-            "31I",
-            "32?",
-            "33.",
-            "34)", /* Report Kleines quadrat ⌑ SM490000	Lozenge U+2311 SQUARE LOZENGE */
-            "35[",
-            "36<",
-            "37}", /*auch %| soll: Senkrechter strich dreimal durchgestrichen  SS970000 Group Mark [Vertical bar across three short horizontal bars]  U+241D SYMBOL FOR GROUP SEPARATOR ␝ */
-            "40-",
-            "41J",
-            "42K",
-            "43L",
-            "44M",
-            "45N",
-            "46O",
-            "47P",
-            "50Q",
-            "51R",
-            "52!",
-            "53$",
-            "54*",
-            "55]",
-            "56;",
-            "57^", /* auch _ soll: dreieck ∆ Δ Greek capital delta mode change*/
-            "60 ",
-            "61/",
-            "62S",
-            "63T",
-            "64U",
-            "65V",
-            "66W",
-            "67X",
-            "70Y",
-            "71Z",
-            "72|", /* auch #  soll: senkrechter strich zweimal durchgestrichen ‡ ‡  not equals record mark SS950000 Record Mark [Vertical bar across two short horizontal bars]  U+241E SYMBOL FOR RECORD SEPARATOR  U+29E7 THERMODYNAMIC [Vertical bar across two short horizontal bars] */
-            "73,",
-            "74(", /* Report: % */
-            "75~", /* auch ^` soll: inverses ^  ˅ γ U+02C7 ˇ caron  inverted caret or equals  word separator  U+22CE CURLY LOGICAL OR */
-            "76\\",
-            "77\"" /* auch { soll: wagerechter strich 3 mal durchgestrichen ⧻ triple vertical bar slashed segment mark SS960000 Segment Mark [Horizontal bar across 3 short verticals]   U+241F SYMBOL FOR UNIT SEPARATOR U+29FB TRIPLE PLUS [Horizontal bar across three short verticals] */
+            "000","011","022","033","044","055","066","077","108","119","12_","13=","14'","15:","16>","17{",  
+            "20+","21A","22B","23C","24D","25E","26F","27G","30H","31I","32?","33.","34)","35[","36<","37}", 
+            "40-","41J","42K","43L","44M","45N","46O","47P","50Q","51R","52!","53$","54*","55]","56;","57^", 
+            "60 ","61/","62S","63T","64U","65V","66W","67X","70Y","71Z","72|","73,","74(","75~","76\\","77\"" 
         };
         static BcdConverter() /* statischer Konstruktor */
         {
@@ -424,18 +366,14 @@ namespace Sim704
             if (0 != (bcd & 0xC0u)) /* bits 7 oder 6 müssen Null sein */
                 throw new Exception("BcdConverter:invalid BCD char");
             if (bcd2asc[bcd] == -1)
-            {
-                Console.Write("{0} ", Convert.ToString(bcd, 8).PadLeft(2, '0'));
                 return '?';
-            }
             return (char)bcd2asc[bcd];
         }
         public static byte CharToBcd(char chr)/* wandelt char nach BCD */
         {
             if (asc2bcd.TryGetValue(chr, out int v))
                 return (byte)v;
-            else
-                return (byte)asc2bcd['?'];
+             return (byte)asc2bcd['?'];
         }
         public static byte[] StringToBcd(string s)/* wandelt string nach BCD Array */
         {

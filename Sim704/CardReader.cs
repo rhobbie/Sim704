@@ -49,9 +49,9 @@ namespace Sim704
                     eof = true;
                     if (cardwasread)
                     {
-                        if (Io704.Config.logIO)
-                            Console.WriteLine("Card Reader hopper empty");                        
-                            Console.Error.WriteLine("Card Reader hopper empty");
+                        if (Io704.Config.LogIO!=null)
+                            Io704.LogIO.WriteLine("Card Reader empty");                        
+                        Console.Error.WriteLine("Card Reader empty");
                         CPU704.halt = true;
                         CPU704.repeat = true;
                         cardwasread = false;
@@ -59,8 +59,8 @@ namespace Sim704
                 }
                 else
                 {
-                    if (Io704.Config.logIO)
-                        Console.WriteLine("Card {0} read", f.NumOfRecords());
+                    if (Io704.Config.LogIO!=null)
+                        Io704.LogIO.WriteLine("Card {0} read", f.NumOfRecords());
                     cardwasread = true;
                     if (!binary || mrecord.Length != 160)
                         throw new InvalidDataException("invalid cbn record on Card Reader");
@@ -78,23 +78,23 @@ namespace Sim704
 
             if (eof)
             {
-                if (Io704.Config.logIO)
+                if (Io704.Config.LogIO!=null)
                     
-                Console.WriteLine("Cardreader EOF");
+                Io704.LogIO.WriteLine("Cardreader EOF");
                 return 1;
             }                
             if (PosInRecord >= RRecord.Length)
             {
-                if (Io704.Config.logIO)
+                if (Io704.Config.LogIO!=null)
                     
-                Console.WriteLine("Cardreader EOR");
+                Io704.LogIO.WriteLine("Cardreader EOR");
                 return 2;
             }
             w = RRecord[PosInRecord++];
             ALU.MQ = (W36)w;
-            if (Io704.Config.logIO)
+            if (Io704.Config.LogIO!=null)
                 
-            Console.WriteLine("Cardreader {0}", ALU.MQ);
+            Io704.LogIO.WriteLine("Cardreader {0}", ALU.MQ);
             return 0;
 
         }

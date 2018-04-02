@@ -21,7 +21,7 @@ namespace Sim704
         {
             if (args.Length != 1)
             { 
-                Console.WriteLine("Usage Sim704 config.xml");
+                Console.Error.WriteLine("Usage Sim704 config.xml");
                 return;
             }
             Bootdev boot=Io704.Init(args[0]);
