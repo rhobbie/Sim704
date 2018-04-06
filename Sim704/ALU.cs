@@ -1188,7 +1188,7 @@ namespace Sim704
                 if (AC.M37 >= MQ.M)
                     return false;
             }
-            /* Nope, MQ bigger, so take branch */
+            /* MQ bigger, so take branch */
             return true;
         }
         public static uint PBT() /* P Bit test */
