@@ -352,7 +352,7 @@ namespace Sim704
             {
                 int b = Convert.ToInt32(ibm704bcd[i].Substring(0, 2), 8);
                 if (bcd2asc[b] != 0 || b != i)
-                    throw new Exception("BcdConverter: error in bcd table");
+                    Console.Error.WriteLine("BcdConverter: error in bcd table");
                 char c = ibm704bcd[i][2];
                 bcd2asc[b] = c;
                 char cl = Char.ToLower(c);

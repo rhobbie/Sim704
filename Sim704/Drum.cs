@@ -9,11 +9,12 @@ namespace Sim704
     class Drum : IDisposable, I704dev
     {
         FileStream f;
-        ulong[] Buffer;
+        W36[] Buffer;
         uint unit;
         uint DrumAddress;
         bool ReadActive; /* read is active */
         bool WriteActive; /* write is active */
+        bool dirty; /* data was changed */
         public Drum(uint u)
         {
             unit = u;
@@ -27,39 +28,56 @@ namespace Sim704
             DrumAddress = 0;
         }
         public void WDR() /* Write Drum*/
-        {            
+        {
             ReadActive = false;
             WriteActive = true;
             DrumAddress = 0;
         }
         public void LDA(uint Adr) /* Load Drum Adress*/
         {
-            DrumAddress = Adr%(uint)Buffer.Length;
+            DrumAddress = Adr % (uint)Buffer.Length;
         }
         public void MountDrum(string file) /* Mount Drum and load from file */
         {
-            Buffer = new ulong[2048];
-            byte[] byteBuffer = new byte[2048 * 8];
+
+            Buffer = new W36[2048];
+            byte[] byteBuffer = new byte[2048 * 5];
             if (f != null)
                 throw new InvalidOperationException(string.Format("Drum {0} already mounted", unit));
             if (file != null)
                 f = new FileStream(file, FileMode.OpenOrCreate);
             else
                 f = null;
-            f.Read(byteBuffer, 0, byteBuffer.Length);
-            for (int i = 0; i < 2048; i++)
-                Buffer[i] = BitConverter.ToUInt64(byteBuffer, i * 8);
-
+            int rlen = f.Read(byteBuffer, 0, byteBuffer.Length);
+            if (rlen == byteBuffer.Length&& f.Length == byteBuffer.Length)
+                for (int i = 0, p = 0; i < 2048; i++, p += 5)
+                {
+                    W15 A = new W15(BitConverter.ToUInt16(byteBuffer, p));
+                    W15 D = new W15(BitConverter.ToUInt16(byteBuffer, p + 2));
+                    W3 T = new W3((uint)(byteBuffer[p + 4] & 15));
+                    W3 P = new W3((uint)(byteBuffer[p + 4] >> 4));
+                    Buffer[i] = new W36() { A = A, T = T, D = D, P = P };
+                }
+            else if (rlen != 0)
+                throw new FileLoadException("Drum file load error");
+            dirty = false;
         }
         public void UnMountDrum() /* Unmount Drum and save to file*/
         {
-            byte[] byteBuffer = new byte[2048 * 8];
-            if (f == null)
-                throw new InvalidOperationException(string.Format("Drum {0} not mounted", unit));
-            for (int i = 0; i < 2048; i++)
-                BitConverter.GetBytes(Buffer[i]).CopyTo(byteBuffer, i * 8);
-            f.Seek(0, SeekOrigin.Begin);
-            f.Write(byteBuffer, 0, byteBuffer.Length);
+            if (dirty)
+            {
+                byte[] byteBuffer = new byte[2048 * 5];
+                if (f == null)
+                    throw new InvalidOperationException(string.Format("Drum {0} not mounted", unit));
+                for (int i = 0, p = 0; i < 2048; i++, p+=5)
+                {
+                    BitConverter.GetBytes((UInt16)(Buffer[i].A)).CopyTo(byteBuffer, p);
+                    BitConverter.GetBytes((UInt16)(Buffer[i].D)).CopyTo(byteBuffer, p + 2);
+                    byteBuffer[p + 4] = (byte)(Buffer[i].T | (Buffer[i].P << 4));
+                }
+                f.Seek(0, SeekOrigin.Begin);
+                f.Write(byteBuffer, 0, byteBuffer.Length);
+            }
             f.Close();
             f.Dispose();
             f = null;
@@ -72,7 +90,7 @@ namespace Sim704
             {
                 w = Buffer[DrumAddress];
                 ALU.MQ = (W36)w;
-                if (Io704.Config.LogIO!=null)
+                if (Io704.Config.LogIO != null)
                     Io704.LogIO.WriteLine("Drum {0} Read {1} from Address {2}", unit, ALU.MQ, (W15)DrumAddress);
                 DrumAddress++;
                 if (DrumAddress >= Buffer.Length)
@@ -81,11 +99,12 @@ namespace Sim704
             else if (WriteActive)
             {
                 ALU.MQ = (W36)w;
-                if (Io704.Config.LogIO!=null)
+                if (Io704.Config.LogIO != null)
                     Io704.LogIO.WriteLine("Drum {0} Written {1} to Address {2}", unit, ALU.MQ, (W15)DrumAddress);
-                Buffer[DrumAddress++] = w;
+                Buffer[DrumAddress++] = (W36)w;
                 if (DrumAddress >= Buffer.Length)
                     DrumAddress = 0;
+                dirty = true;
             }
             else
                 throw new InvalidOperationException("CPY while device not selected");

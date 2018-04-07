@@ -73,9 +73,7 @@ namespace Sim704
                     AC = (W38)(AC >> 1);
                 }
             if (rnd && (MQ.B1 != 0))
-            {
                 AC = (W38)(AC + 1);
-            }
             if (0 != (f1 ^ f2))
             {
                 MQ.S = new W1(1);
@@ -106,9 +104,7 @@ namespace Sim704
             do
             {
                 AC.M37 = (W37)(AC.M37 << 1);
-
                 MQ = (W36)(MQ << 1);
-
                 if (MQ.S != 0)
                 {
                     MQ.S = new W1();
@@ -356,9 +352,7 @@ namespace Sim704
             if (AC != 0 || !norm)
             {
                 if (fptemp < 0)
-                {
                     tmpacoflag = true;
-                }
 
                 else if (fptemp > 0377)
                 {

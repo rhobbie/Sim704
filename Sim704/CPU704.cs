@@ -738,6 +738,7 @@ namespace Sim704
         public static bool repeat; /* repeat last instruction */
         public static WA ILC; /* Instruction Counter */
         public static WA NIC; /* Next Instruction Counter for Transfer*/
+        public static W36 SR; /* Storage register */
         static WA[] X = new WA[3]; /* Index Register */
         public static bool halt = false;
         static public void Clr()
@@ -752,8 +753,9 @@ namespace Sim704
             repeat = false;
             CoreMemory.Clear();
         }
-        static void SetX(W3 T, WA A)
+        static void SetX(WA A)
         {
+            W3 T = SR.T;
             if (0 != (T & 1))
                 X[0] = A;
             if (0 != (T & 2))
@@ -761,10 +763,10 @@ namespace Sim704
             if (0 != (T & 4))
                 X[2] = A;
         }
-        static WA GetX(W3 T)
+        static WA GetX()
         {
             uint A = 0;
-
+            W3 T = SR.T;
             if (0 != (T & 1))
                 A |= X[0];
             if (0 != (T & 2))
@@ -774,31 +776,31 @@ namespace Sim704
 
             return (WA)A;
         }
-        static WA GetY(W36 SR) /* Get Y*/
+        static WA GetY() /* Get Y*/
         {
-            return (WA)(SR.A - GetX(SR.T));
+            return (WA)(SR.A - GetX());
         }
-        static W36 LoadCY(W36 SR) /* Load C(Y) */
+        static W36 LoadCY() /* Load C(Y) */
         {
-            return CoreMemory.C((WA)(SR.A - GetX(SR.T)));
+            return CoreMemory.C((WA)(SR.A - GetX()));
         }
-        static void StoreCY(W36 SR, W36 V) /* Store V to C(Y) */
+        static void StoreCY(W36 V) /* Store V to C(Y) */
         {
-            CoreMemory.C((WA)(SR.A - GetX(SR.T)), V);
+            CoreMemory.C((WA)(SR.A - GetX()), V);
         }
-        static WA GetYni(W36 SR) /* Get Y not indexed*/
+        static WA GetYni() /* Get Y not indexed*/
         {
             return (WA)(uint)SR.A;
         }
-        static W36 LoadCYni(W36 SR) /* Load C(Y) not indexed*/
+        static W36 LoadCYni() /* Load C(Y) not indexed*/
         {
             return CoreMemory.C((WA)(uint)SR.A);
         }
-        static void StoreCYni(W36 SR, W36 V) /* Store V to C(Y) not indexed*/
+        static void StoreCYni( W36 V) /* Store V to C(Y) not indexed*/
         {
             CoreMemory.C((WA)(uint)SR.A, V);
         }
-        static W36 SR;
+    
         static void Debug(string OPC)
         {
             if (Io704.Config.LogCPU != null)
@@ -873,70 +875,71 @@ namespace Sim704
             /* check if Type A or Type B instruction */
             bool splus = (SR.S==0); /* Sign positive*/
             uint P = (SR.P & 3); /* lower 2 bits of prefix */
+            bool inst = false;
             switch (P)
             {
                 case 1: /*1000*/
                     if (splus) /* +1 : TXI Transfer with index incremeted */
                     {
                         DebugATD("TXI");
-                        SetX(SR.T, (WA)(GetX(SR.T) + SR.D));
-                        NIC = GetYni(SR);
+                        SetX((WA)(GetX() + SR.D));
+                        NIC = GetYni();
                         transferInst = true;
                         doTransfer = true;
-                    }
-                    else
-                    {
-                        Console.Error.WriteLine("Type A operation {0}{1} not implemented", splus ? '+' : '-', P);
-                        halt = true;
+                        inst = true;
                     }
                     break;
                 case 2:/*2000*/
                     if (splus) /* +2 : TIX Transfer on Index  */
                     {
                         DebugATD("TIX");
-                        WA X = GetX(SR.T);
+                        WA X = GetX();
                         transferInst = true;
                         if (X > (WA)(uint)SR.D)
                         {
-                            SetX(SR.T, (WA)(X - SR.D));
-                            NIC = GetYni(SR);
+                            SetX((WA)(X - SR.D));
+                            NIC = GetYni();
                             doTransfer = true;
                         }
+                        inst = true;
                     }
                     else /* -2 : TNX  Transfer on No Index  */
                     {
                         DebugATD("TNX");
-                        WA X = GetX(SR.T); ;
+                        WA X = GetX();
                         transferInst = true;
                         if (X <= (WA)(uint)SR.D)
                         {
-                            NIC = GetYni(SR);
+                            NIC = GetYni();
                             doTransfer = true;
                         }
                         else
-                            SetX(SR.T, (WA)(X - SR.D));
-                    }
+                            SetX((WA)(X - SR.D));
+                        inst = true;
+                    }                    
                     break;
                 case 3: /*3000*/
                     if (splus) /* +3 : TXH */
                     {
                         DebugATD("TXH");
                         transferInst = true;
-                        if (GetX(SR.T) > (WA)(uint)SR.D)
+                        if (GetX() > (WA)(uint)SR.D)
                         {
-                            NIC = GetYni(SR);
+                            NIC = GetYni();
                             doTransfer = true;
                         }
+                        inst = true;
                     }
                     else /* -3 : TXL */
                     {
                         DebugATD("TXL");
                         transferInst = true;
-                        if (GetX(SR.T) <= (WA)(uint)SR.D)
+                        if (GetX() <= (WA)(uint)SR.D)
                         {
-                            NIC = GetYni(SR);
+                            NIC = GetYni();
                             doTransfer = true;
                         }
+                        inst = true;
                     }
                     break;
                 case 0:
@@ -951,12 +954,8 @@ namespace Sim704
                                 DebugAT("HTR");
                                 transferInst = true;
                                 doTransfer = true;
-                                NIC = GetY(SR);
-                            }
-                            else
-                            {
-                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", splus ? '+' : '-', Convert.ToString(P, 8).PadLeft(3, '0'), P);
-                                halt = true;
+                                NIC = GetY();
+                                inst = true;
                             }
                             break;
                         case 16: /*020*/
@@ -965,12 +964,8 @@ namespace Sim704
                                 DebugAT("TRA");
                                 transferInst = true;
                                 doTransfer = true;
-                                NIC = GetY(SR);
-                            }
-                            else
-                            {
-                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", splus ? '+' : '-', Convert.ToString(P, 8).PadLeft(3, '0'), P);
-                                halt = true;
+                                NIC = GetY();
+                                inst = true;
                             }
                             break;
                         case 17: /*021*/
@@ -978,12 +973,8 @@ namespace Sim704
                             {
                                 DebugAT("TTR");
                                 doTransfer = true;
-                                NIC = GetY(SR);
-                            }
-                            else
-                            {
-                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", splus ? '+' : '-', Convert.ToString(P, 8).PadLeft(3, '0'), P);
-                                halt = true;
+                                NIC = GetY();
+                                inst = true;
                             }
                             break;
                         case 32: /*040*/
@@ -992,27 +983,19 @@ namespace Sim704
                                 DebugAT("TLQ");
                                 transferInst = true;
                                 doTransfer = ALU.TLQ();
-                                NIC = GetY(SR);
-                            }
-                            else
-                            {
-                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", splus ? '+' : '-', Convert.ToString(P, 8).PadLeft(3, '0'), P);
-                                halt = true;
+                                NIC = GetY();
+                                inst = true;
                             }
                             break;
                         case 60: /*074*/
                             if (splus) /*+74 TSX Transfer and set index */
                             {
                                 DebugAT("TSX");
-                                SetX(SR.T, (WA)(0x8000U - ILC));
+                                SetX((WA)(0x8000U - ILC));
                                 transferInst = true;
                                 doTransfer = true;
-                                NIC = GetYni(SR);
-                            }
-                            else
-                            {
-                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", splus ? '+' : '-', Convert.ToString(P, 8).PadLeft(3, '0'), P);
-                                halt = true;
+                                NIC = GetYni();
+                                inst = true;
                             }
                             break;
                         case 64: /*100*/
@@ -1021,14 +1004,16 @@ namespace Sim704
                                 DebugAT("TZE");
                                 transferInst = true;
                                 doTransfer = ALU.TZE();
-                                NIC = GetY(SR);
+                                NIC = GetY();
+                                inst = true;
                             }
                             else   /* -100 TNZ Transfer on No Zero*/
                             {
                                 DebugAT("TNZ");
                                 transferInst = true;
                                 doTransfer = ALU.TNZ();
-                                NIC = GetY(SR);
+                                NIC = GetY();
+                                inst = true;
                             }
                             break;
                         case 80: /*120*/
@@ -1037,14 +1022,16 @@ namespace Sim704
                                 DebugAT("TPL");
                                 transferInst = true;
                                 doTransfer = ALU.TPL();
-                                NIC = GetY(SR);
+                                NIC = GetY();
+                                inst = true;
                             }
                             else /*-120 TMI Transfer on Minus*/
                             {
                                 DebugAT("TMI");
                                 transferInst = true;
                                 doTransfer = ALU.TMI();
-                                NIC = GetY(SR);
+                                NIC = GetY();
+                                inst = true;
                             }
                             break;
                         case 96: /*140*/
@@ -1053,14 +1040,16 @@ namespace Sim704
                                 DebugAT("TOV");
                                 transferInst = true;
                                 doTransfer = ALU.TOV();
-                                NIC = GetY(SR);
+                                NIC = GetY();
+                                inst = true;
                             }
                             else /*-140 TOV Transfer on No Overflow */
                             {
                                 DebugAT("TNO");
                                 transferInst = true;
                                 doTransfer = ALU.TNO();
-                                NIC = GetY(SR);
+                                NIC = GetY();
+                                inst = true;
                             }
                             break;
                         case 113: /*161*/
@@ -1069,12 +1058,8 @@ namespace Sim704
                                 DebugAT("TQO");
                                 transferInst = true;
                                 doTransfer = ALU.TQO();
-                                NIC = GetY(SR);
-                            }
-                            else
-                            {
-                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", splus ? '+' : '-', Convert.ToString(P, 8).PadLeft(3, '0'), P);
-                                halt = true;
+                                NIC = GetY();
+                                inst = true;
                             }
                             break;
                         case 114: /*162*/
@@ -1083,180 +1068,156 @@ namespace Sim704
                                 DebugAT("TQP");
                                 transferInst = true;
                                 doTransfer = ALU.TQP();
-                                NIC = GetY(SR);
-                            }
-                            else
-                            {
-                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", splus ? '+' : '-', Convert.ToString(P, 8).PadLeft(3, '0'), P);
-                                halt = true;
+                                NIC = GetY();
+                                inst = true;
                             }
                             break;
                         case 128: /*200*/
                             if (splus) /*+200 MPY Multiply*/
                             {
                                 DebugAT("MPY");
-                                ALU.MPY(GetY(SR));
+                                ALU.MPY(GetY());
+                                inst = true;
                             }
                             else /*-200 MPY Multiply and Round*/
                             {
                                 DebugAT("MPR");
-                                ALU.MPR(GetY(SR));
+                                ALU.MPR(GetY());
+                                inst = true;
                             }
                             break;
                         case 144: /*220*/
                             if (splus) /*+220 DVH Divide or HALT*/
                             {
-                                halt = ALU.DVH(GetY(SR));
+                                halt = ALU.DVH(GetY());
                                 DebugAT("DVH");
-                            }
-                            else
-                            {
-                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", splus ? '+' : '-', Convert.ToString(P, 8).PadLeft(3, '0'), P);
-                                halt = true;
+                                inst = true;
                             }
                             break;
                         case 145: /*221*/
                             if (splus) /*+221 DVH Divide or Proceed*/
                             {
                                 DebugAT("DVP");
-                                ALU.DVP(GetY(SR));
-                            }
-                            else
-                            {
-                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", splus ? '+' : '-', Convert.ToString(P, 8).PadLeft(3, '0'), P);
-                                halt = true;
+                                ALU.DVP(GetY());
+                                inst = true;
                             }
                             break;
                         case 160: /*240*/
                             if (splus) /*+240 FDH Floating Divide or HALT*/
                             {
-                                halt = ALU.FDH(GetY(SR));
+                                halt = ALU.FDH(GetY());
                                 DebugAT("FDH");
-                            }
-                            else
-                            {
-                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", splus ? '+' : '-', Convert.ToString(P, 8).PadLeft(3, '0'), P);
-                                halt = true;
+                                inst = true;
                             }
                             break;
                         case 161: /*241*/
                             if (splus) /*+241 FDP Floating Divide or Proceed*/
                             {
                                 DebugAT("FDP");
-                                ALU.FDP(GetY(SR));
-                            }
-                            else
-                            {
-                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", splus ? '+' : '-', Convert.ToString(P, 8).PadLeft(3, '0'), P);
-                                halt = true;
+                                ALU.FDP(GetY());
+                                inst = true;
                             }
                             break;
                         case 176: /*260*/
                             if (splus) /*+260 FMP FloatingMultiply */
                             {
                                 DebugAT("FMP");
-                                ALU.FMP(GetY(SR));
+                                ALU.FMP(GetY());
+                                inst = true;
                             }
                             else /*-260 UFM Unnormalizied Floating Multiply */
                             {
                                 DebugAT("UFM");
-                                ALU.UFM(GetY(SR));
+                                ALU.UFM(GetY());
+                                inst = true;
                             }
                             break;
                         case 192: /*300*/
                             if (splus) /*+300 FAD Floating Add */
                             {
                                 DebugAT("FAD");
-                                ALU.FAD(GetY(SR));
+                                ALU.FAD(GetY());
+                                inst = true;
                             }
                             else /*-300 UFA Unnormalizied Floating Add */
                             {
                                 DebugAT("UFA");
-                                ALU.UFA(GetY(SR));
+                                ALU.UFA(GetY());
+                                inst = true;
                             }
                             break;
                         case 194: /*302*/
                             if (splus) /* +302 FSB Floating Subtract */
                             {
                                 DebugAT("FSB");
-                                ALU.FSB(GetY(SR));
+                                ALU.FSB(GetY());
+                                inst = true;
                             }
                             else /* -302 UFS Unnormalizied Floating Subtract */
                             {
                                 DebugAT("UFS");
-                                ALU.UFS(GetY(SR));
+                                ALU.UFS(GetY());
+                                inst = true;
                             }
                             break;
                         case 208: /*320*/
                             if (splus) /*+320 ANS AND to Storage*/
                             {
                                 DebugAT("ANS");
-                                ALU.ANS(GetY(SR));
+                                ALU.ANS(GetY());
+                                inst = true;
                             }
                             else /*-320 ANA AND to Accumulator*/
                             {
                                 DebugAT("ANA");
-                                ALU.ANA(GetY(SR));
+                                ALU.ANA(GetY());
+                                inst = true;
                             }
                             break;
                         case 224: /*340*/
                             if (splus) /*+340 CAS Compare Accumulator with Storage*/
                             {
                                 DebugAT("CAS");
-                                skip = ALU.CAS(GetY(SR));
-                            }
-                            else
-                            {
-                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", splus ? '+' : '-', Convert.ToString(P, 8).PadLeft(3, '0'), P);
-                                halt = true;
+                                skip = ALU.CAS(GetY());
+                                inst = true;
                             }
                             break;
                         case 241: /*361*/
                             if (splus) /*+361 ACL Add and Carry Logical Word*/
                             {
                                 DebugAT("ACL");
-                                ALU.ACL(GetY(SR));
-                            }
-                            else
-                            {
-                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", splus ? '+' : '-', Convert.ToString(P, 8).PadLeft(3, '0'), P);
-                                halt = true;
+                                ALU.ACL(GetY());
+                                inst = true;
                             }
                             break;
                         case 256: /*400*/
                             if (splus) /*+400 ADD Add */
                             {
                                 DebugAT("ADD");
-                                ALU.ADD(GetY(SR));
+                                ALU.ADD(GetY());
+                                inst = true;
                             }
                             else/*-400 SBM Subtract Magnitude */
                             {
                                 DebugAT("SBM");
-                                ALU.SBM(GetY(SR));
+                                ALU.SBM(GetY());
+                                inst = true;
                             }
                             break;
                         case 257: /*401*/
                             if (splus) /*+401 ADM Add Magnitude */
                             {
                                 DebugAT("ADM");
-                                ALU.ADM(GetY(SR));
-                            }
-                            else
-                            {
-                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", splus ? '+' : '-', Convert.ToString(P, 8).PadLeft(3, '0'), P);
-                                halt = true;
+                                ALU.ADM(GetY());
+                                inst = true;
                             }
                             break;
                         case 258: /*402 */
                             if (splus) /*+402 SUB*/
                             {
                                 DebugAT("SUB");
-                                ALU.SUB(GetY(SR));
-                            }
-                            else
-                            {
-                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", splus ? '+' : '-', Convert.ToString(P, 8).PadLeft(3, '0'), P);
-                                halt = true;
+                                ALU.SUB(GetY());
+                                inst = true;
                             }
                             break;
                         case 272: /*420*/
@@ -1264,233 +1225,195 @@ namespace Sim704
                             {
                                 halt = true;
                                 DebugAT("HPR");
-                            }
-                            else
-                            {
-                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", splus ? '+' : '-', Convert.ToString(P, 8).PadLeft(3, '0'), P);
-                                halt = true;
+                                inst = true;
                             }
                             break;
                         case 304: /*460 */
                             if (splus) /*+460 LDA Locate Drum Address*/
                             {
                                 DebugAT("LDA");
-                                Io704.LDA((uint)LoadCY(SR));
-                            }
-                            else
-                            {
-                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", splus ? '+' : '-', Convert.ToString(P, 8).PadLeft(3, '0'), P);
-                                halt = true;
+                                Io704.LDA((uint)LoadCY());
+                                inst = true;
                             }
                             break;
                         case 320: /*500*/
                             if (splus) /*+500 CLA Clear and ADD */
                             {
                                 DebugAT("CLA");
-                                ALU.CLA(GetY(SR));
+                                ALU.CLA(GetY());
+                                inst = true;
                             }
                             else /*-500 CAL Clear and ADD logical Word */
                             {
                                 DebugAT("CAL");
-                                ALU.CAL(GetY(SR));
+                                ALU.CAL(GetY());
+                                inst = true;
                             }
                             break;
                         case 321: /*501*/
-                            if (splus)
-                            {
-                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", splus ? '+' : '-', Convert.ToString(P, 8).PadLeft(3, '0'), P);
-                                halt = true;
-                            }
-                            else /*-501 ORA Or to Accumulator*/
+                            if (!splus) /*-501 ORA Or to Accumulator*/
                             {
                                 DebugAT("ORA");
-                                ALU.ORA(GetY(SR));
+                                ALU.ORA(GetY());
+                                inst = true;
                             }
                             break;
                         case 322: /*502*/
                             if (splus) /*+502 CLS Clear and Subtract */
                             {
                                 DebugAT("CLS");
-                                ALU.CLS(GetY(SR));
-                            }
-                            else
-                            {
-                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", splus ? '+' : '-', Convert.ToString(P, 8).PadLeft(3, '0'), P);
-                                halt = true;
+                                ALU.CLS(GetY());
+                                inst = true;
                             }
                             break;
                         case 348: /*534*/
                             if (splus) /*+534 LXA Load Index from Address*/
                             {
                                 DebugAT("LXA");
-                                SetX(SR.T, (WA)(uint)LoadCYni(SR).A);
+                                SetX((WA)(uint)LoadCYni().A);
+                                inst = true;
                             }
                             else   /* -534 LXD Load Index from Decrement */
                             {
                                 DebugAT("LXD");
-                                SetX(SR.T, (WA)(uint)LoadCYni(SR).D);
+                                SetX((WA)(uint)LoadCYni().D);
+                                inst = true;
                             }
                             break;
                         case 368: /*560*/
                             if (splus) /*+560 LDQ Load MQ*/
                             {
                                 DebugAT("LDQ");
-                                ALU.LDQ(GetY(SR));
-                            }
-                            else
-                            {
-                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", splus ? '+' : '-', Convert.ToString(P, 8).PadLeft(3, '0'), P);
-                                halt = true;
+                                ALU.LDQ(GetY());
+                                inst = true;
                             }
                             break;
                         case 384: /*600*/
                             if (splus) /*+600 STZ Store Zero*/
                             {
                                 DebugAT("STZ");
-                                StoreCY(SR, new W36());
+                                StoreCY(new W36());
+                                inst = true;
                             }
                             else /*-600 STQ Store MQ*/
                             {
                                 DebugAT("STQ");
-                                ALU.STQ(GetY(SR));
+                                ALU.STQ(GetY());
+                                inst = true;
                             }
                             break;
                         case 385: /*601*/
                             if (splus) /*+601 STO Store*/
                             {
                                 DebugAT("STO");
-                                ALU.STO(GetY(SR));
-                            }
-                            else
-                            {
-                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", splus ? '+' : '-', Convert.ToString(P, 8).PadLeft(3, '0'), P);
-                                halt = true;
+                                ALU.STO(GetY());
+                                inst = true;
                             }
                             break;
                         case 386: /*602*/
                             if (splus) /*+602 SLW Store Logical Word*/
                             {
                                 DebugAT("SLW");
-                                ALU.SLW(GetY(SR));
+                                ALU.SLW(GetY());
+                                inst = true;
                             }
                             else /*-602 ORS Or to Storage*/
                             {
                                 DebugAT("ORS");
-                                ALU.ORS(GetY(SR));
+                                ALU.ORS(GetY());
+                                inst = true;
                             }
                             break;
                         case 400:/*620*/
-                            if (splus)
-                            {
-                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", splus ? '+' : '-', Convert.ToString(P, 8).PadLeft(3, '0'), P);
-                                halt = true;
-                            }
-                            else /*+620 SLQ Store Left Half MQ*/
+                            if (!splus) /*+620 SLQ Store Left Half MQ*/
                             {
                                 DebugAT("SLQ");
-                                ALU.SLQ(GetY(SR));
+                                ALU.SLQ(GetY());
+                                inst = true;
                             }
                             break;
                         case 401:/*621*/
                             if (splus) /*+621 STA Store Address*/
                             {
                                 DebugAT("STA");
-                                ALU.STA(GetY(SR));
-                            }
-                            else
-                            {
-                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", splus ? '+' : '-', Convert.ToString(P, 8).PadLeft(3, '0'), P);
-                                halt = true;
+                                ALU.STA(GetY());
+                                inst = true;
                             }
                             break;
                         case 402:/*622*/
                             if (splus) /*+622 STD Store Decrement*/
                             {
                                 DebugAT("STD");
-                                ALU.STD(GetY(SR));
-                            }
-                            else
-                            {
-                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", splus ? '+' : '-', Convert.ToString(P, 8).PadLeft(3, '0'), P);
-                                halt = true;
+                                ALU.STD(GetY());
+                                inst = true;
                             }
                             break;
                         case 408:/*630*/
                             if (splus) /*+630 STP Store Prefix*/
                             {
                                 DebugAT("STP");
-                                ALU.STP(GetY(SR));
-                            }
-                            else
-                            {
-                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", splus ? '+' : '-', Convert.ToString(P, 8).PadLeft(3, '0'), P);
-                                halt = true;
+                                ALU.STP(GetY());
+                                inst = true;
                             }
                             break;
                         case 412: /*634*/
-                            if (splus)
-                            {
-                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", splus ? '+' : '-', Convert.ToString(P, 8).PadLeft(3, '0'), P);
-                                halt = true;
-                            }
-                            else /*-634 SXD Store index in Decrement*/
+                            if (!splus) /*-634 SXD Store index in Decrement*/
                             {
                                 DebugAT("SXD");
                                 if (SR.T != 0 && SR.T != 1 && SR.T != 2 && SR.T != 4)
                                     throw new Exception("Warning, multiple index registers, see page 26 / SXD");
-                                W36 temp = LoadCYni(SR);
-                                temp.D = (W15)(uint)GetX(SR.T);
-                                CoreMemory.C(GetYni(SR), temp);
+                                W36 temp = LoadCYni();
+                                temp.D = (W15)(uint)GetX();
+                                CoreMemory.C(GetYni(), temp);
+                                inst = true;
                             }
                             break;
                         case 448:/*700*/
                             if (splus) /*+700 CPY Copy or Skip */
                             {
                                 DebugAT("CPY");
-                                skip = (uint)Io704.CPY(ref CoreMemory.Mem[GetY(SR)]);
+                                skip = (uint)Io704.CPY(ref CoreMemory.Mem[GetY()]);
+                                inst = true;
                             }
                             else /*-700 CAD Copy and Add Logical Word */
                             {
                                 DebugAT("CAD");
-                                skip = (uint)Io704.CPY(ref CoreMemory.Mem[GetY(SR)]);
+                                skip = (uint)Io704.CPY(ref CoreMemory.Mem[GetY()]);
                                 if (skip == 0)
-                                    ALU.ACL(GetY(SR));
+                                    ALU.ACL(GetY());
+                                inst = true;
                             }
                             break;
                         case 476:/*734*/
                             if (splus) /* +734 PAX Place Address in Index */
                             {
                                 DebugAT("PAX");
-                                SetX(SR.T, ALU.PAX());
+                                SetX( ALU.PAX());
+                                inst = true;
                             }
                             else /* -734 PDX Place Decrement in Index */
                             {
                                 DebugAT("PDX");
-                                SetX(SR.T, ALU.PDX());
+                                SetX(ALU.PDX());
+                                inst = true;
                             }
                             break;
                         case 492:/*754*/
-                            if (splus)
-                            {
-                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", splus ? '+' : '-', Convert.ToString(P, 8).PadLeft(3, '0'), P);
-
-                                halt = true;
-                            }
-                            else /* -754 PXD Place Index in Decrement*/
+                            if (!splus) /* -754 PXD Place Index in Decrement*/
                             {
                                 DebugAT0("PXD");
                                 if (SR.T != 0 && SR.T != 1 && SR.T != 2 && SR.T != 4)
                                     throw new Exception("Warning, multiple index registers, see page 26 / PXD");
-                                ALU.PXD(GetX(SR.T));
+                                ALU.PXD(GetX());
+                                inst = true;
                             }
                             break;
                         case 496: /*760*/
                             {
-                                uint unit = GetY(SR);
+                                uint unit = GetY();
                                 uint subunit = unit & 15;
                                 unit >>= 4;
                                 if (unit == 0)
-                                {
                                     switch (subunit)
                                     {
                                         case 0: /*760...000*/
@@ -1498,11 +1421,7 @@ namespace Sim704
                                             {
                                                 Debug("CLM");
                                                 ALU.CLM();
-                                            }
-                                            else
-                                            {
-                                                Console.Error.WriteLine("Operation {0}{1}...{2} not implemented ->{3}", splus ? '+' : '-', Convert.ToString(P, 8).PadLeft(3, '0'), Convert.ToString(SR.A, 8).PadLeft(3, '0'), (uint)SR.A);
-                                                halt = true;
+                                                inst = true;
                                             }
                                             break;
                                         case 1: /*760...001*/
@@ -1510,11 +1429,13 @@ namespace Sim704
                                             {
                                                 Debug("LBT");
                                                 skip = ALU.LBT();
+                                                inst = true;
                                             }
                                             else /*-760...001 PBT P Bit Test */
                                             {
                                                 Debug("PBT");
                                                 skip = ALU.PBT();
+                                                inst = true;
                                             }
                                             break;
                                         case 2: /*760...002*/
@@ -1522,11 +1443,7 @@ namespace Sim704
                                             {
                                                 Debug("CHS");
                                                 ALU.CHS();
-                                            }
-                                            else
-                                            {
-                                                Console.Error.WriteLine("Operation {0}{1}...{2} not implemented ->{3}", splus ? '+' : '-', Convert.ToString(P, 8).PadLeft(3, '0'), Convert.ToString(SR.A, 8).PadLeft(3, '0'), (uint)SR.A);
-                                                halt = true;
+                                                inst = true;
                                             }
                                             break;
                                         case 3: /*760...003*/
@@ -1534,11 +1451,13 @@ namespace Sim704
                                             {
                                                 Debug("SSP");
                                                 ALU.SSP();
+                                                inst = true;
                                             }
                                             else/*-760...003 SSP Set Sign Plus*/
                                             {
                                                 Debug("SSM");
                                                 ALU.SSM();
+                                                inst = true;
                                             }
                                             break;
                                         case 6: /*760...006*/
@@ -1546,11 +1465,7 @@ namespace Sim704
                                             {
                                                 Debug("COM");
                                                 ALU.COM();
-                                            }
-                                            else
-                                            {
-                                                Console.Error.WriteLine("Operation {0}{1}...{2} not implemented ->{3}", splus ? '+' : '-', Convert.ToString(P, 8).PadLeft(3, '0'), Convert.ToString(SR.A, 8).PadLeft(3, '0'), (uint)SR.A);
-                                                halt = true;
+                                                inst = true;
                                             }
                                             break;
                                         case 7:  /*760...007*/
@@ -1558,11 +1473,13 @@ namespace Sim704
                                             {
                                                 Debug("ETM");
                                                 trapping = true;
+                                                inst = true;
                                             }
                                             else /*-760...007 LTM Leave Trapping Mode*/
                                             {
                                                 Debug("LTM");
                                                 trapping = false;
+                                                inst = true;
                                             }
                                             break;
                                         case 8: /*760...010*/
@@ -1570,11 +1487,7 @@ namespace Sim704
                                             {
                                                 Debug("RND");
                                                 ALU.RND();
-                                            }
-                                            else
-                                            {
-                                                Console.Error.WriteLine("Operation {0}{1}...{2} not implemented ->{3}", splus ? '+' : '-', Convert.ToString(P, 8).PadLeft(3, '0'), Convert.ToString(SR.A, 8).PadLeft(3, '0'), (uint)SR.A);
-                                                halt = true;
+                                                inst = true;
                                             }
                                             break;
                                         case 9: /*760...011*/
@@ -1582,11 +1495,7 @@ namespace Sim704
                                             {
                                                 Debug("ETT");
                                                 skip = Io704.ETT();
-                                            }
-                                            else
-                                            {
-                                                Console.Error.WriteLine("Operation {0}{1}...{2} not implemented ->{3}", splus ? '+' : '-', Convert.ToString(P, 8).PadLeft(3, '0'), Convert.ToString(SR.A, 8).PadLeft(3, '0'), (uint)SR.A);
-                                                halt = true;
+                                                inst = true;
                                             }
                                             break;
                                         case 10: /*760...012 */
@@ -1594,19 +1503,17 @@ namespace Sim704
                                             {
                                                 Debug("DCT");
                                                 skip = ALU.DCT();
+                                                inst = true;
                                             }
                                             else /*-760...012 RTT Redundancy Tape Test*/
                                             {
                                                 Debug("RTT");
                                                 skip = Io704.RTT();
+                                                inst = true;
                                             }
                                             break;
-                                        default:
-                                            Console.Error.WriteLine("Operation {0}{1}...{2} not implemented ->{3}", splus ? '+' : '-', Convert.ToString(P, 8).PadLeft(3, '0'), Convert.ToString(SR.A, 8).PadLeft(3, '0'), (uint)SR.A);
-                                            halt = true;
-                                            break;
                                     }
-                                }
+                                
                                 else
                                 {
                                     if (splus) /* +760 PSE Plus sense*/
@@ -1646,7 +1553,8 @@ namespace Sim704
                                             Debug("SWT" + subunit.ToString());
                                         else
                                             DebugAT(Opc);
-                                        skip = (uint)Io704.PSE(GetY(SR));
+                                        skip = (uint)Io704.PSE(GetY());
+                                        inst = true;
                                     }
                                     else /* +760 MSE Minus sense*/
                                     {
@@ -1665,7 +1573,8 @@ namespace Sim704
                                             Debug("SLT" + subunit.ToString());
                                         else
                                             DebugAT(Opc);
-                                        skip = (uint)Io704.MSE(GetY(SR));
+                                        skip = (uint)Io704.MSE(GetY());
+                                        inst = true;
                                     }
                                 }
                             }
@@ -1674,20 +1583,15 @@ namespace Sim704
                             if (splus) /* +761 NOP No Operation*/
                             {
                                 Debug("NOP");
-                            }
-                            else
-                            {
-                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", splus ? '+' : '-', Convert.ToString(P, 8).PadLeft(3, '0'), P);
-
-                                halt = true;
+                                inst = true;
                             }
                             break;
                         case 498:/*762*/
                             if (splus) /* +762 RDS Read Select */
                             {
-                                uint unit = GetY(SR);
+                                uint unit = GetY();
                                 string OPcode = "RDS";
-#if printunits
+#if false
                                 switch (unit >> 4)
                                 {
                                     case 8: /* BCD Tape */
@@ -1713,56 +1617,45 @@ namespace Sim704
                                 Io704.RDS(unit);
                                 if (halt && repeat && Io704.Config.LogCPU == null)
                                     DebugAT(OPcode);
-                            }
-                            else
-                            {
-                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", splus ? '+' : '-', Convert.ToString(P, 8).PadLeft(3, '0'), P);
-
-                                halt = true;
+                                inst = true;
                             }
                             break;
                         case 499: /*763*/
                             if (splus) /* +763 LLS Long Left Shift */
                             {
                                 DebugAT("LLS");
-                                ALU.LLS(GetY(SR));
+                                ALU.LLS(GetY());
+                                inst = true;
                             }
                             else/* -763 LGL Logical Left */
                             {
                                 DebugAT("LGL");
-                                ALU.LGL(GetY(SR));
+                                ALU.LGL(GetY());
+                                inst = true;
                             }
                             break;
                         case 500:/*764*/
                             if (splus) /* +764 BST Backspace Tape */
                             {
                                 DebugAT("BSR");
-                                Io704.BST(GetY(SR));
-                            }
-                            else
-                            {
-                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", splus ? '+' : '-', Convert.ToString(P, 8).PadLeft(3, '0'), P);
-                                halt = true;
+                                Io704.BST(GetY());
+                                inst = true;
                             }
                             break;
                         case 501: /*765*/
                             if (splus) /*+765 LRS Long Right Shift*/
                             {
                                 DebugAT("LRS");
-                                ALU.LRS(GetY(SR));
-                            }
-                            else
-                            {
-                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", splus ? '+' : '-', Convert.ToString(P, 8).PadLeft(3, '0'), P);
-                                halt = true;
+                                ALU.LRS(GetY());
+                                inst = true;
                             }
                             break;
                         case 502: /*766*/
                             if (splus) /*+766 WRS Write Select*/
                             {
-                                uint unit = GetY(SR);
+                                uint unit = GetY();
                                 string OPcode = "WRS";
-#if printunits
+#if false
                                 switch (unit >> 4)
                                 {
                                     case 1: /* CRT */
@@ -1793,83 +1686,56 @@ namespace Sim704
 #endif
                                 DebugAT(OPcode);
                                 Io704.WRS(unit);
-                            }
-                            else
-                            {
-                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", splus ? '+' : '-', Convert.ToString(P, 8).PadLeft(3, '0'), P);
-                                halt = true;
+                                inst = true;
                             }
                             break;
                         case 503: /*767*/
                             if (splus) /*+767 ALS Accumulator Left Shift */
                             {
                                 DebugAT("ALS");
-                                ALU.ALS(GetY(SR));
-                            }
-                            else
-                            {
-                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", splus ? '+' : '-', Convert.ToString(P, 8).PadLeft(3, '0'), P);
-                                halt = true;
+                                ALU.ALS(GetY());
+                                inst = true;
                             }
                             break;
                         case 504: /*770*/
                             if (splus) /*+770 WEF Write End of File*/
                             {
                                 DebugAT("WEF");
-                                Io704.WEF(GetY(SR));
-                            }
-                            else
-                            {
-                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", splus ? '+' : '-', Convert.ToString(P, 8).PadLeft(3, '0'), P);
-                                halt = true;
+                                Io704.WEF(GetY());
+                                inst = true;
                             }
                             break;
                         case 505: /*771*/
                             if (splus) /*+771 Accumulator Right Shift*/
                             {
                                 DebugAT("ARS");
-                                ALU.ARS(GetY(SR));
-                            }
-                            else
-                            {
-                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", splus ? '+' : '-', Convert.ToString(P, 8).PadLeft(3, '0'), P);
-                                halt = true;
+                                ALU.ARS(GetY());
+                                inst = true;
                             }
                             break;
                         case 506: /*772*/
                             if (splus) /*+772 REW Rewind Tape*/
                             {
                                 DebugAT("REW");
-                                Io704.REW(GetY(SR));
-                            }
-                            else
-                            {
-                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", splus ? '+' : '-', Convert.ToString(P, 8).PadLeft(3, '0'), P);
-                                halt = true;
+                                Io704.REW(GetY());
+                                inst = true;
                             }
                             break;
                         case 507: /*773*/
-                            if (splus)
-                            {
-                                Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", splus ? '+' : '-', Convert.ToString(P, 8).PadLeft(3, '0'), P);
-                                halt = true;
-                            }
-                            else/*-773 RQL Rotate MQ Left*/
+                            if (!splus) /*-773 RQL Rotate MQ Left*/
                             {
                                 DebugAT("RQL");
-                                ALU.RQL(GetY(SR));
+                                ALU.RQL(GetY());
+                                inst = true;
                             }
-                            break;
-                        default:
-                            Console.Error.WriteLine("Operation {0}{1} not implemented ->{2}", splus ? '+' : '-', Convert.ToString(P, 8).PadLeft(3, '0'), P);
-                            halt = true;
                             break;
                     }
                     break;
-                default:
-                    Console.Error.WriteLine("Type A operation {0}{1} not implemented", splus ? '+' : '-', P);
-                    halt = true;
-                    break;
+            }
+            if(!inst)
+            {
+                Console.Error.WriteLine("Operation {0} not implemented", SR);
+                halt = true;
             }
             if (trapping && transferInst)
             {
