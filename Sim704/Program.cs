@@ -20,12 +20,13 @@ namespace Sim704
         static void Main(string[] args)
         {
             if (args.Length != 1)
-            { 
-                Console.Error.WriteLine("Usage Sim704 config.xml");
+            {
+                Console.Error.WriteLine("Sim704 Version 0.1");
+                Console.Error.WriteLine("Usage: Sim704 config.xml");
                 return;
             }
             Bootdev boot=Io704.Init(args[0]);
-            //Io704.WriteFileConfig(@"C:\temp\t.xml");            
+            
             AppDomain.CurrentDomain.ProcessExit += new EventHandler(Io704.OnProcessExit);
             
             switch (boot)

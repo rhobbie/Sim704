@@ -702,7 +702,7 @@ namespace Sim704
     struct WA
     {
         static uint wmask; /* mask for word */
-        static int olen; /* octal lenght */
+        public static int olen; /* octal lenght */
         uint w; /* N bit Word stored in 32 bit uint*/
 
         public static void SetMask(uint AddressMask)
@@ -796,20 +796,31 @@ namespace Sim704
         {
             return CoreMemory.C((WA)(uint)SR.A);
         }
-        static void StoreCYni( W36 V) /* Store V to C(Y) not indexed*/
+        static void StoreCYni(W36 V) /* Store V to C(Y) not indexed*/
         {
             CoreMemory.C((WA)(uint)SR.A, V);
         }
-    
+        static void DebugHdr()
+        {
+            if (Io704.Config.LogCPU != null)
+            {
+                if (WA.olen == 4)
+                    Io704.LogCPU.WriteLine("IC    AC            MQ             XR1   XR2  XR4");
+                else
+                    Io704.LogCPU.WriteLine("IC     AC            MQ              XR1    XR2   XR4");
+            }
+        }
         static void Debug(string OPC)
         {
+            
             if (Io704.Config.LogCPU != null)
             {
                 Io704.LogCPU.Write("{0} {1} {2} {3} {4} {5}  {6}   ", ILC, ALU.AC.ACToString(), ALU.MQ.MQtoString(), X[0], X[1], X[2], SR.MQtoString());
                 Io704.LogCPU.WriteLine(OPC);
             }
-            if(halt)
+            if (halt)
             {
+                Io704.Flush();
                 Console.Error.Write("{0} {1} {2} {3} {4} {5}  {6}   ", ILC, ALU.AC.ACToString(), ALU.MQ.MQtoString(), X[0], X[1], X[2], SR.MQtoString());
                 Console.Error.WriteLine(OPC);
             }
@@ -827,6 +838,7 @@ namespace Sim704
             }
             if (halt)
             {
+                Io704.Flush();
                 Console.Error.Write("{0} {1} {2} {3} {4} {5}  {6}   ", ILC, ALU.AC.ACToString(), ALU.MQ.MQtoString(), X[0], X[1], X[2], SR.MQtoString());
                 Console.Error.Write(OPC);
                 if (SR.T != 0)
@@ -845,6 +857,7 @@ namespace Sim704
             }
             if (halt)
             {
+                Io704.Flush();
                 Console.Error.Write("{0} {1} {2} {3} {4} {5}  {6}   ", ILC, ALU.AC.ACToString(), ALU.MQ.MQtoString(), X[0], X[1], X[2], SR.MQtoString());
                 Console.Error.Write(OPC);
                 Console.Error.WriteLine(" {0},{1}", SR.A, SR.T);
@@ -860,6 +873,7 @@ namespace Sim704
             }
             if (halt)
             {
+                Io704.Flush();
                 Console.Error.Write("{0} {1} {2} {3} {4} {5}  {6}   ", ILC, ALU.AC.ACToString(), ALU.MQ.MQtoString(), X[0], X[1], X[2], SR.MQtoString());
                 Console.Error.Write(OPC);
                 Console.Error.WriteLine(" {0},{1},{2}", SR.A, SR.T, SR.D);
@@ -873,7 +887,7 @@ namespace Sim704
             bool doTransfer = false;
             uint skip = 0;
             /* check if Type A or Type B instruction */
-            bool splus = (SR.S==0); /* Sign positive*/
+            bool splus = (SR.S == 0); /* Sign positive*/
             uint P = (SR.P & 3); /* lower 2 bits of prefix */
             bool inst = false;
             switch (P)
@@ -916,7 +930,7 @@ namespace Sim704
                         else
                             SetX((WA)(X - SR.D));
                         inst = true;
-                    }                    
+                    }
                     break;
                 case 3: /*3000*/
                     if (splus) /* +3 : TXH */
@@ -1388,7 +1402,7 @@ namespace Sim704
                             if (splus) /* +734 PAX Place Address in Index */
                             {
                                 DebugAT("PAX");
-                                SetX( ALU.PAX());
+                                SetX(ALU.PAX());
                                 inst = true;
                             }
                             else /* -734 PDX Place Decrement in Index */
@@ -1513,7 +1527,7 @@ namespace Sim704
                                             }
                                             break;
                                     }
-                                
+
                                 else
                                 {
                                     if (splus) /* +760 PSE Plus sense*/
@@ -1732,7 +1746,7 @@ namespace Sim704
                     }
                     break;
             }
-            if(!inst)
+            if (!inst)
             {
                 Console.Error.WriteLine("Operation {0} not implemented", SR);
                 halt = true;
@@ -1781,7 +1795,9 @@ namespace Sim704
         }
         static public void Go()
         {
+            int HaltCnt = 0;
             bool transfer = false;
+            DebugHdr();
             do
             {
                 if (transfer)
@@ -1789,22 +1805,30 @@ namespace Sim704
                 transfer = Step();
                 if (halt)
                 {
-                    Io704.Disconnect();                    
                     if (repeat)
                     {
                         ILC = (WA)(ILC - 1);
                         repeat = false;
                     }
                     Console.Error.WriteLine("HALT at {0}", ILC);
-                    string l = Console.ReadLine();
                     halt = false;
-                    if (l == "x")
-                        break;
-                    if (l.Length >= 2 && l.Substring(0, 2) == "go")
+                    if (Io704.Config.ExitOnHalt <= 0)
+                    {                        
+                        string l = Console.ReadLine();
+                        if (l == "x")
+                            break;
+                        if (l.Length >= 2 && l.Substring(0, 2) == "go")
+                        {
+                            string[] split = l.Split(new char[] { ' ' });
+                            ILC = (WA)(uint)Convert.ToInt32(split[1], 8);
+                            transfer = false;
+                        }
+                    }
+                    else
                     {
-                        string[] split = l.Split(new char[] { ' ' });
-                        ILC = (WA)(uint)Convert.ToInt32(split[1], 8);
-                        transfer = false;
+                        HaltCnt++;
+                        if (HaltCnt >= Io704.Config.ExitOnHalt)
+                            break;
                     }
                 }
             }

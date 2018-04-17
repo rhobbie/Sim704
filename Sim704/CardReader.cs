@@ -50,7 +50,8 @@ namespace Sim704
                     if (cardwasread)
                     {
                         if (Io704.Config.LogIO!=null)
-                            Io704.LogIO.WriteLine("Card Reader empty");                        
+                            Io704.LogIO.WriteLine("Card Reader empty");
+                        Io704.Flush();
                         Console.Error.WriteLine("Card Reader empty");
                         CPU704.halt = true;
                         CPU704.repeat = true;

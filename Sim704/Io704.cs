@@ -20,6 +20,7 @@ namespace Sim704
         public Bootdev boot;        
         public string LogIO;
         public string LogCPU;
+        public int ExitOnHalt;
     }
     interface I704dev
     {
@@ -142,6 +143,11 @@ namespace Sim704
             }
             currdev = null;
             currdrum = -1;
+        }
+        public static void Flush()
+        {
+            if (LP != null)
+                LP.Flush();
         }
         public static void RDS(uint unit) /* Read Select */
         {

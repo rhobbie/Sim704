@@ -18,10 +18,11 @@ namespace Sim704
         char[] printerline; /* current line that was printed but not written to file */
         bool linewasprinted;  /* a line was printed but not written to file */
         bool[] sense;
-
+        bool ConsoleOut;
 
         public void MountPaper(string file)
         {
+            ConsoleOut = false;
             if (f != null)
                 throw new InvalidOperationException("Paper already mounted");
             if (file != null)
@@ -31,6 +32,7 @@ namespace Sim704
                 /* no file given: print on console */
                 f = new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true };
                 Console.SetOut(f);
+                ConsoleOut = true;
             }
             WriteActive = false;
             ReadActive = false;
@@ -52,6 +54,14 @@ namespace Sim704
             }
             f.Dispose();
             f = null;
+        }
+        public void Flush()
+        {
+            if (ConsoleOut&&linewasprinted)
+            { 
+                Writeprintedlinetofile();
+                f.Write('\n'); /* new line*/
+            }
         }
         public void RPR() /* Read Printer*/
         {
