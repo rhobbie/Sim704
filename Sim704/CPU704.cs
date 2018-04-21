@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Text;
-using System.IO;
 namespace Sim704
 {
     struct W1
@@ -1533,32 +1532,7 @@ namespace Sim704
                                     if (splus) /* +760 PSE Plus sense*/
                                     {
                                         string Opc = "PSE";
-#if false
-                                        switch (unit)
-                                        {
-                                            case 1:
-                                                Opc = "CFF";
-                                                break;
-                                            case 6:
-                                                if (subunit == 0)
-                                                    Opc = "SLF";
-                                                else
-                                                    Opc = "SLN";
-                                                break;
-                                            case 7:
-                                                Opc = "SWT";
-                                                break;
-                                            case 14:
-                                                Opc = "SPU";
-                                                break;
-                                            case 15:
-                                                if (subunit == 0)
-                                                    Opc = "SPT";
-                                                else
-                                                    Opc = "SPR";
-                                                break;
-                                        }
-#endif
+
                                         if (unit == 6 && subunit == 0)
                                             Debug("SLF");
                                         else if (unit == 6 && subunit != 0)
@@ -1573,16 +1547,7 @@ namespace Sim704
                                     else /* +760 MSE Minus sense*/
                                     {
                                         string Opc = "MSE";
-#if false
-                                        switch (unit)
-                                        {
-                                            case 8:
-                                                Opc = "SLT";
-                                                break;
-                                            default:
-                                                break;
-                                        }
-#endif
+
                                         if (unit == 6)
                                             Debug("SLT" + subunit.ToString());
                                         else
@@ -1605,28 +1570,7 @@ namespace Sim704
                             {
                                 uint unit = GetY();
                                 string OPcode = "RDS";
-#if false
-                                switch (unit >> 4)
-                                {
-                                    case 8: /* BCD Tape */
-                                        OPcode = "RTD";
-                                        break;
-                                    case 9: /* Bin Tape */
-                                        OPcode = "RTB";
-                                        break;
-                                    case 12: /* Drum */
-                                        OPcode = "RDR";
-                                        break;
-                                    case 13: /* Card Reader */
-                                        OPcode = "RCD";
-                                        break;
-                                    case 15: /* Printer */
-                                        OPcode = "RPR";
-                                        break;
-                                    default:
-                                        throw new InvalidOperationException("RDS");
-                                }
-#endif
+
                                 DebugAT(OPcode);
                                 Io704.RDS(unit);
                                 if (halt && repeat && Io704.Config.LogCPU == null)
@@ -1669,35 +1613,7 @@ namespace Sim704
                             {
                                 uint unit = GetY();
                                 string OPcode = "WRS";
-#if false
-                                switch (unit >> 4)
-                                {
-                                    case 1: /* CRT */
-                                        OPcode = "WTV";
-                                        break;
-                                    case 8: /* BCD Tape */
-                                        OPcode = "WTD";
-                                        break;
-                                    case 9: /* Bin Tape */
-                                        OPcode = "WTB";
-                                        break;
-                                    case 12: /* Drum */
-                                        OPcode = "WDR";
-                                        break;
-                                    case 13: /* IOD / Sim Tape */
-                                        if (unit == 219)
-                                            OPcode = "IOD";
-                                        else
-                                            OPcode = "WTS";
-                                        break;
-                                    case 14: /* Card Punch */
-                                        OPcode = "WPU";
-                                        break;
-                                    case 15: /* Printer */
-                                        OPcode = "WPR";
-                                        break;
-                                }
-#endif
+
                                 DebugAT(OPcode);
                                 Io704.WRS(unit);
                                 inst = true;

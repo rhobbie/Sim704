@@ -1,6 +1,4 @@
-﻿#define newmath
-#define newshift
-using System;
+﻿using System;
 
 namespace Sim704
 {
@@ -18,7 +16,6 @@ namespace Sim704
             MQ = new W36();
             acoflag = mqoflag = dcheck = false;
         }
-#if newmath
         public static void Iadd()
         {
             long C = (long)(ulong)AC.M37;
@@ -93,114 +90,6 @@ namespace Sim704
             AC.M37 = (W37)(ulong)AC_M;
             return false;
         }
-#else
-        static void Iadd()
-        {
-            bool f1 = false; /* True: Signs of AC and SR differs */
-
-            W1 f2 = AC.S; /* Sign of AC */
-            W1 f8 = AC.PB; /* P of in AC */
-
-            /* Make AC Positive  */
-            AC.S = new W1();
-
-            /* Check signes of SR & AC */
-            if (SR.S != f2)
-            {
-                AC.M37 = (W37)~AC.M37; /* One's compliment */
-                f1 = true;
-            }
-            AC = (W38)(AC + SR.M);
-
-            /* Check carry from Q */
-            if (f1) /* Check if signs were not same */
-            {
-                if (0 != AC.S)
-                {
-                    f2 = (W1)~f2;
-                    AC = (W38)(AC + 1);
-                    if (AC.PB != f8)
-                        acoflag = true;
-                }
-                else
-                    AC.M37 = (W37)~AC.M37; /* One's compliment */
-            }
-            else if (AC.PB != f8)
-                acoflag = true;
-            /* Restore sign to AC */
-            AC.S = f2;
-        }
-        static void Impy(bool rnd)
-        {
-
-            int shiftcnt = 35;
-            W1 f1 = MQ.S;
-            W1 f2 = SR.S;
-            SR.S = new W1();
-            MQ.S = new W1();
-            AC = new W38();  /* clear AC */
-            if (SR == 0)
-                MQ = new W36();
-            else
-                while (shiftcnt-- > 0)
-                {
-                    if ((MQ & 1) != 0)
-                        AC = (W38)(AC + SR);
-                    MQ = (W36)(MQ >> 1);
-                    if ((AC & 1) != 0)
-                        MQ.B1 = new W1(1);
-                    AC = (W38)(AC >> 1);
-                }
-            if (rnd && (MQ.B1 != 0))
-                AC = (W38)(AC + 1);
-            if (0 != (f1 ^ f2))
-            {
-                MQ.S = new W1(1);
-                AC.S = new W1(1);
-            }
-        }
-        static bool Idiv()
-        {
-            int shiftcnt = 35;
-            
-            /* Save sign */
-            W1 f1 = SR.S;
-            SR.S = new W1();
-            W1 f2 = AC.S;
-            /* Check if SR less then AC */
-            if (SR <= AC.M37)
-            {
-                dcheck = true;
-                MQ.S = (W1)(f2 ^ f1);
-                return true;
-            }
-            /* Clear signs */
-            MQ.S = new W1();
-            AC.S = new W1();
-
-            /* Do divide operation */
-            do
-            {
-                AC.M37 = (W37)(AC.M37 << 1);
-                MQ = (W36)(MQ << 1);
-                if (MQ.S != 0)
-                {
-                    MQ.S = new W1();
-                    AC = (W38)(AC | 1);
-                }
-                if (SR <= AC)
-                {
-                    AC = (W38)(AC - SR);
-                    MQ = (W36)(MQ | 1);
-                }
-            }
-            while (--shiftcnt != 0);
-
-            AC.S = f2;
-            MQ.S = new W1(f1 ^ f2);
-            return false;
-        }
-#endif
         static void Fadd(bool norm)
         {
             /* The C(Y) are algebraically added to the C(AC), 
@@ -253,7 +142,7 @@ namespace Sim704
              *  AC enter position 9 of the MQ. Bits shifted out of 
              *  position 35 of the MQ are lost. */
             shiftcnt &= 255;
-#if newmath
+
             if (shiftcnt < 27)
             {
                 MQ.F = (W27)(AC << (27 - shiftcnt));
@@ -267,20 +156,6 @@ namespace Sim704
                     MQ = new W36();
                 AC = new W38();
             }
-#else
-            if (shiftcnt >= 0 && shiftcnt < 63)
-            {
-                while (shiftcnt > 0)
-                {
-                    MQ = (W36)(MQ >> 1);
-                    MQ.B9 = new W1((uint)AC);
-                    AC = (W38)(AC >> 1);
-                    shiftcnt--;
-                }
-            }
-            else
-                AC = new W38();
-#endif
             /*  7. The fraction in the SR is algebraically added to 
              *  the fraction in the AC and this sum replaces the 
              *  C(AC)S,9-35.  */
@@ -416,25 +291,12 @@ namespace Sim704
             fptemp -= 128;
 
             /* Do multiply */
-#if newmath
+
             long temp = Math.BigMul((int)(uint)MQ.F, (int)(uint)SR.F);
 
             MQ = new W36 { F = (W27)(temp) };
             AC = new W38 { F = (W27)(temp >> 27) };
-#else
-            MQ = new W36 { F = MQ.F };
-            SR = new W36 { F = SR.F };
-            int shiftcnt = 27;
-            while (shiftcnt-- > 0)
-            {
-                if ((MQ & 1) != 0)
-                    AC = (W38)(AC + SR);
-                MQ = (W36)(MQ >> 1);
-                if ((AC & 1) != 0)
-                    MQ.B9 = new W1(1);
-                AC = new W38 { F = (W27)(AC >> 1) };
-            }
-#endif
+
             /* Normalize the result */
             if (norm)
             {
@@ -524,27 +386,10 @@ namespace Sim704
                 }
 
                 /* Do actual divide */
-#if newmath
+
                 MQ = (W36)(ulong)Math.DivRem((long)((AC << 27) | MQ.F), (long)(ulong)SR, out long rem);
                 AC = (W38)(ulong)rem;
-#else
-                int shiftcnt = 27;
-                do
-                {
-                    AC = (W38)(AC << 1);
-                    MQ = (W36)(MQ << 1);
-                    if ((MQ.C & 1) != 0)
-                    {
-                        MQ.C = (W8)(MQ.C & 0xFE);
-                        AC = (W38)(AC | 1);
-                    }
-                    if (SR <= AC)
-                    {
-                        AC = (W38)(AC - SR);
-                        MQ = (W36)(MQ | 1);
-                    }
-                } while (--shiftcnt != 0);
-#endif
+
                 /* Compute new characteristic */
 
                 AC = new W38(AC.F);
@@ -863,7 +708,7 @@ namespace Sim704
              * Positions made vacant are filled with zeros. */
 
             int shift = (int)(Y & 0xFF);
-#if newshift
+
             if (shift < 35)
             {
                 if (0 != (AC.M35 >> (35 - shift)))
@@ -880,14 +725,7 @@ namespace Sim704
                 AC.M37 = (W37)(AC.M37 << shift);
             else
                 AC.M37 = new W37();
-#else
-            for (int i = 0; i < shift; i++)
-            {
-                AC.M37 = (W37)(AC.M37 << 1);
-                if (0 != AC.PB)
-                    acoflag = true;
-            }
-#endif
+
         }
         public static void ARS(WA Y) /* Accumulator Right Shift */
         {
@@ -914,7 +752,6 @@ namespace Sim704
 
             int shift = (int)(Y & 0xFF);
 
-#if newshift
             /* check for ac overflow */
             if (shift < 35) /* only some AC.M35 bits shiftet into p */
             {
@@ -952,18 +789,6 @@ namespace Sim704
             }
             /* shift sign */
             AC.S = MQ.S;
-#else
-            W1 Sign = MQ.S; /* Save sign */
-            for (int i = 0; i < shift; i++)
-            {
-                MQ = (W36)(MQ << 1);
-                AC = (W38)((AC << 1) | MQ.S);
-                if (AC.PB != 0)
-                    acoflag = true;
-            }
-            /* Restore sign when done */
-            AC.S = MQ.S = Sign;
-#endif
 
         }
         public static void LRS(WA Y) /* Long Right Shift */
@@ -976,7 +801,7 @@ namespace Sim704
              * same sign as that of the AC */
 
             int shift = (int)(Y & 0xFF);
-#if newshift
+
             /* Do shift */
             if (shift < 35)
                 MQ = (W36)((AC.M37 << (35 - shift)) | (MQ.M >> shift));
@@ -991,21 +816,7 @@ namespace Sim704
 
             /* shift sign */
             MQ.S = AC.S;
-#else
-            /* Save sign */
-            W1 Sign = AC.S;
 
-            /* Clear it for now */
-            AC.S = new W1();
-            for (uint i = 0; i < shift; i++)
-            {
-                MQ.S = new W1((uint)AC & 1);
-                MQ = (W36)(MQ >> 1);
-                AC = (W38)(AC >> 1);
-            }            
-            /* Restore sign when done */
-            AC.S = MQ.S = Sign;
-#endif
         }
         public static void LGL(WA Y) /* Logical Left */
         {
@@ -1020,7 +831,7 @@ namespace Sim704
              * AC is unchanged */
 
             int shift = (int)(Y & 0xFF);
-#if newshift
+
             /* check for ac overflow */
             if (shift < 35) /* only some AC.M35 bits shiftet into p */
             {
@@ -1057,19 +868,7 @@ namespace Sim704
                     AC.M37 = new W37();
                 MQ = new W36();
             }
-#else
-             /* Save sign */
-            W1 Sign = AC.S;
-            for (int i = 0; i < shift; i++)
-            {
-                AC = (W38)((AC << 1) | MQ.S);
-                MQ = (W36)(MQ << 1);
-                if (AC.PB != 0)
-                    acoflag = true;
-            }
-            /* Restore sign when done */
-            AC.S = Sign;
-#endif
+
         }
         public static void RQL(WA Y) /* Rotate MQ Left */
         {
@@ -1079,13 +878,10 @@ namespace Sim704
              * MQ. */
 
             int shift = (int)(Y & 0xFF);
-#if newshift
+
             shift %= 36;
             MQ = (W36)((MQ << shift) | (MQ >> (36 - shift)));
-#else
-            for (uint i = 0; i < shift; i++)
-                MQ = (W36)((MQ << 1) | MQ.S);
-#endif
+
 
         }
         #endregion
