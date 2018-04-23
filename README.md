@@ -2,7 +2,7 @@
 
 Sim704 is a simulator for the IBM 704 Computer
  
-It can run the original Fortran II compiler from 1958/59 and also the SHARE assembler program (UASAP).
+It can run the original Fortran II compiler from 1958 and also the SHARE assembler program (UASAP).
 
 It is written in C# and runs on Windows (and with Mono also under Linux). 
 
@@ -115,7 +115,7 @@ A x and return exits the simulator. A go followed by an octal value and return c
 When the simulator exits then "finished." is printed to the console. This means that all cached data is written and all open files are closed.
 
 
-Usefull documentation links for the 704, UASAP and Fortran:
+Documentation links for the 704, UASAP and Fortran:
 
 IBM 704 Manual of Operation 
        http://bitsavers.org/pdf/ibm/704/24-6661-2_704_Manual_1955.pdf
