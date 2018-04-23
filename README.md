@@ -2,7 +2,7 @@
 
 Sim704 is a simulator for the IBM 704 Computer
  
-It can run the original Fortran II compiler from 1958 and also the SHARE assembler program (UASAP).
+It can run the original Fortran II compiler from 1958/59 and also the SHARE assembler program (UASAP).
 
 It is written in C# and runs on Windows (and with Mono also under Linux). 
 
@@ -13,6 +13,11 @@ See the Mkf2 repository for prebuild binaries and a set of windows batchfiles to
 The configuration of Sim704 is done with an xml file that has to be given as command line parameter.
 The tapes, drums, printer, card reader, card punch, sense lights and sense switches are simulated.
 Tape and card files are in SimH p7b format and can also be used on Simh when using this option. 
+
+The tool704 repository contains a set of tools for handling tape and cardfiles.
+
+For documentation links see below.
+
 
 Configuration options in the xml file. (For examples see the Mkf2 repository) 
 
@@ -110,4 +115,37 @@ A x and return exits the simulator. A go followed by an octal value and return c
 When the simulator exits then "finished." is printed to the console. This means that all cached data is written and all open files are closed.
 
 
-...
+Usefull documentation links for the 704, UASAP and Fortran:
+
+IBM 704 Manual of Operation 
+       http://bitsavers.org/pdf/ibm/704/24-6661-2_704_Manual_1955.pdf
+       
+CODING for the MIT-IBM 704 COMPUTER      
+      http://bitsavers.org/pdf/mit/computer_center/Coding_for_the_MIT-IBM_704_Computer_Oct57.pdf
+
+SHARE Reference Manual for the IBM 704 
+           http://www.piercefuller.com/library/share59.html
+
+IBM MODEL-704 GUIDEBOOK 
+         https://pubarchive.lbl.gov/islandora/object/ir:148891
+
+Fortran Reference Manual 
+          http://bitsavers.org/pdf/ibm/704/704_FortranProgRefMan_Oct56.pdf
+          
+Fortran Programmer's Primer 
+           http://bitsavers.org/pdf/ibm/704/F28-6019_704_FORTRAN_primer.pdf
+
+Fortran II Reference Manual 
+           http://bitsavers.org/pdf/ibm/704/C28-6000-2_704_FORTRANII.pdf
+
+Fortran II Operations Manual 
+           http://bitsavers.org/pdf/ibm/704/704_FORTRAN_II_OperMan.pdf
+
+History of FORTRAN and FORTRAN II 
+           http://www.softwarepreservation.org/projects/FORTRAN/
+
+IBM 704 SW archive 
+           http://sky-visions.com/ibm/704/
+
+IBM SHARE tape Library 
+           http://www.piercefuller.com/library/share.html
