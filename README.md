@@ -1,6 +1,6 @@
 # Sim704
 
-Sim704 is a simulator for the IBM 704 Computer
+Sim704 is a simulator for the IBM 704 computer
  
 It can run the original Fortran II compiler from 1958 and also the SHARE assembler program (UASAP).
 
@@ -92,7 +92,7 @@ MT means the Simulator boots from tape 1, CRD means boot from card reader and DR
 <LogCPU>logfile.txt</LogCPU>
 ```
 
- Whenn adding this option a logfile of all executed instructions is created. The file is similar to SimH CPU History format.
+ When adding this option a logfile of all executed instructions is created. The file is similar to SimH CPU History format.
 
 ```xml 
  <LogIO>logIO.txt</LogIO>
