@@ -128,7 +128,10 @@ SHARE Reference Manual for the IBM 704
 
 IBM MODEL-704 GUIDEBOOK 
          https://pubarchive.lbl.gov/islandora/object/ir:148891
-
+         
+TRAINING MANUAL ON PROGRAMMING FOR THE IBM 704         
+         https://dome.mit.edu/bitstream/handle/1721.3/48791/DTMB_1960_1368.pdf
+         
 Fortran Reference Manual 
           http://bitsavers.org/pdf/ibm/704/704_FortranProgRefMan_Oct56.pdf
           
