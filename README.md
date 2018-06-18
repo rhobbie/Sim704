@@ -4,9 +4,9 @@ Sim704 is a simulator for the IBM 704 computer
  
 It can run the original Fortran II compiler from 1958 and also the SHARE assembler program (UASAP).
 
-It is written in C# and runs on Windows (and with Mono also under Linux). 
+It is written in C# and runs on Windows. 
 
-Some Parts are based on the SimH IBM 704 implementation.
+Some parts are based on the SimH IBM 704 implementation.
 
 See the Mkf2 repository for prebuild binaries and a set of windows batchfiles to create the UASAP and Fortran tapes and to compile and run Fortran programs on the simulator.
 
@@ -19,7 +19,8 @@ The tool704 repository contains a set of tools for handling tape and cardfiles.
 For documentation links see below.
 
 
-Configuration options in the xml file. (For examples see the Mkf2 repository) 
+These are the configuration options in xml the file:
+(For examples see the Mkf2 repository)
 
 ```xml
  <MT>
@@ -46,21 +47,19 @@ The content of the drums are cached in memory and written out when the simulator
 <CRD>SourceDeck.cbn</CRD>  
 ```
 
-Sets the path for input to the card reader. 
+Sets the file for input to the card reader. 
 
 ```xml
 <CPU>Punched.cbn</CPU>
 ```
 
-Sets the path for output of the card punch. 
-
-The cards are stored in a tape file with one binary record per card in column binary format. 
+Sets the file for output of the card punch. 
 
 ```xml
 <LP>LP.txt</LP>
 ```
 
-Sets the path for output of the printer. The file has ASCII format. 
+Sets the file for output of the printer. The file has ASCII format. 
 When no LP config is given, the printer output is redirected to the console.
 
 ```xml
@@ -74,25 +73,25 @@ When no LP config is given, the printer output is redirected to the console.
   </Switch>
 ```
 
-Configures the switches. First entry is for switch 1 and so on. false means "switch up" and true means "switch down". When no Switch config is given all switches are set to false.
+Configures the switches. First entry is for switch 1 and so on. false means "switch up" and true means "switch down". When no switch config is given all switches are set to false.
 
 ```xml 
  <MemSize>4</MemSize>
 ```
 
-Configures the Memory size of the simulated IBM 704 in kWords. Only 4 8 and 32 is a valid option.
+Configures the memory size of the simulated IBM 704 in kWords. Only 4 8 and 32 is a valid option.
 
 ```xml
 <boot>MT</boot>. 
 ```
 
-MT means the Simulator boots from tape 1, CRD means boot from card reader and DR means boot from drum 1. When no boot option is given the simulator boots from the card reader.
+MT means the simulator boots from tape 1, CRD means boot from card reader and DR means boot from drum 1. When no boot option is given the simulator boots from the card reader.
 
 ```xml
-<LogCPU>logfile.txt</LogCPU>
+<LogCPU>logCPU.txt</LogCPU>
 ```
 
- When adding this option a logfile of all executed instructions is created. The file is similar to SimH CPU History format.
+ When adding this option a logfile of all executed instructions is created. The file is similar to SimH CPU history format.
 
 ```xml 
  <LogIO>logIO.txt</LogIO>
@@ -110,7 +109,7 @@ When adding this option the simulator automatically exits at the first halt. Wit
  
 When no ExitAtHalt option is given then the simulator halts to a (very simple) console.
 When hitting return at the console the simulator continues. 
-A x and return exits the simulator. A go followed by an octal value and return continues the simulator at the given address.
+An x and return exits the simulator. A go followed by an octal value and return continues the simulator at the given address.
  
 When the simulator exits then "finished." is printed to the console. This means that all cached data is written and all open files are closed.
 
@@ -152,3 +151,6 @@ IBM 704 SW archive
 
 IBM SHARE tape Library 
            http://www.piercefuller.com/library/share.html
+           
+A real IBM 704 central unit in a museum in Italy
+           http://www.museoscienza.org/dipartimenti/catalogo_collezioni/scheda_oggetto.asp?idk_in=ST170-00073 
