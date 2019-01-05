@@ -8,7 +8,7 @@ It is written in C# and runs on Windows.
 
 Some parts are based on the SimH IBM 704 implementation.
 
-See the Mkf2 repository for prebuild binaries and a set of windows batchfiles to create the UASAP and Fortran tapes and to compile and run Fortran programs on the simulator.
+See the Mkf2 repository  https://github.com/rhobbie/Mkf2 for prebuild binaries and a set of windows batchfiles to create the UASAP and Fortran tapes and to compile and run Fortran programs on the simulator.
 
 The configuration of Sim704 is done with an xml file that has to be given as command line parameter.
 The tapes, drums, printer, card reader, card punch, sense lights and sense switches are simulated.
