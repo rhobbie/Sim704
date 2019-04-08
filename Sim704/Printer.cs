@@ -17,6 +17,7 @@ namespace Sim704
         bool linewasprinted;  /* a line was printed but not written to file */
         bool[] sense;
         bool ConsoleOut;
+        bool firstline;  /* used to remove false newline at beginning of the output */
 
         public void MountPaper(string file)
         {
@@ -41,6 +42,7 @@ namespace Sim704
             sense = new bool[11];
             linewasprinted = false;
             WRecord = new List<ulong>(24);
+            firstline = true;
         }
         public void UnMountPaper()
         {
@@ -187,9 +189,10 @@ namespace Sim704
                             Writeprintedlinetofile();
                         if (sense[4]) /* SPR 4 ->two spaces before the line*/
                             f.Write('\n'); /* new line*/
-                        f.Write('\n');    /* default-> one space before the line */
+                        if(!firstline)  /* no newline at beginnig */
+                            f.Write('\n');    /* default-> one space before the line */
                     }
-
+                    firstline = false;
                 }
             }
             if (WriteActive)

@@ -39,7 +39,7 @@ namespace Sim704
                 eof = true;
             else
             {
-                int r = f.ReadRecord(out bool binary, out byte[] mrecord);
+                int r = f.ReadRecord(out bool binary, out bool parity_error,out byte[] mrecord);
                 if (r < 1)
                 {
                     eof = true;
@@ -59,7 +59,7 @@ namespace Sim704
                     if (Io704.Config.LogIO!=null)
                         Io704.LogIO.WriteLine("Card {0} read", f.NumOfRecords());
                     cardwasread = true;
-                    if (!binary || mrecord.Length != 160)
+                    if (!binary || parity_error|| mrecord.Length != 160)
                         throw new InvalidDataException("invalid cbn record on Card Reader");
                     CBNConverter.FromCBN(mrecord, out RRecord);
                     eof = false;

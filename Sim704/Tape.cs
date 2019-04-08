@@ -22,26 +22,29 @@ namespace Sim704
             {
                 RRecord = null;
                 ReadActive = false;
-                if (Io704.Config.LogIO!=null)
+                if (Io704.Config.LogIO != null)
                     Io704.LogIO.WriteLine("Tape {0} end read", unit);
             }
             if (WriteActive)
             {
-                byte[] tr = new byte[WRecord.Count * 6];
-                int i = 0;
-                foreach (long w in WRecord)
+                if (WRecord.Count > 0) /* any byte written ? */
                 {
-                    long wt = w;
-                    for (int j = i + 5; j >= i; j--)
+                    byte[] tr = new byte[WRecord.Count * 6];
+                    int i = 0;
+                    foreach (long w in WRecord)
                     {
-                        tr[j] = (byte)(wt & 0x3F);
-                        wt >>= 6;
+                        long wt = w;
+                        for (int j = i + 5; j >= i; j--)
+                        {
+                            tr[j] = (byte)(wt & 0x3F);
+                            wt >>= 6;
+                        }
+                        i += 6;
                     }
-                    i += 6;
+                    f.WriteRecord(wbin, tr);
+                    if (Io704.Config.LogIO != null)
+                        Io704.LogIO.WriteLine("Tape {0}: {1} record {2} with length {3} written", unit, wbin ? "binary" : "BCD", f.NumOfRecords(), WRecord.Count);
                 }
-                f.WriteRecord(wbin, tr);
-                if (Io704.Config.LogIO!=null)
-                    Io704.LogIO.WriteLine("Tape {0}: {1} record {2} with length {3} written",unit, wbin ? "binary" : "BCD", f.NumOfRecords(), WRecord.Count);
                 WriteActive = false;
                 WRecord.Clear();
             }
@@ -80,23 +83,27 @@ namespace Sim704
                 eof = true;
             else
             {
-                int r = f.ReadRecord(out bool rbinary, out byte[] mrecord);
+                int r = f.ReadRecord(out bool rbinary, out bool parity_error, out byte[] mrecord);
+
                 if (r == -1)
                 {
-                    if (Io704.Config.LogIO!=null)
+                    if (Io704.Config.LogIO != null)
                         Io704.LogIO.WriteLine("Tape {0} EOM", unit);
                 }
                 else if (r == 0)
                 {
-                    if (Io704.Config.LogIO!=null)
+                    if (Io704.Config.LogIO != null)
                         Io704.LogIO.WriteLine("Tape {0}: EOF read at record {1}", unit, f.NumOfRecords());
                 }
                 if (r < 1)
                     eof = true;
                 else
-                {                    
-                    if (binary != rbinary)
+                {
+                    if (parity_error || binary != rbinary)
+                    {
                         Io704.tapecheck = true;
+                        Io704.LogIO.WriteLine("Tapecheck error");
+                    }
                     RRecord = new ulong[(mrecord.Length + 5) / 6];
                     if (Io704.Config.LogIO != null)
                         Io704.LogIO.WriteLine("Tape {0}: {1} record {2} with length {3} read", unit, rbinary ? "binary" : "BCD", f.NumOfRecords(), RRecord.Length);
@@ -119,8 +126,8 @@ namespace Sim704
             EndRW();
             wbin = binary;
             WriteActive = true;
-            if (Io704.Config.LogIO!=null)
-                Io704.LogIO.WriteLine("Tape {0} start write {1}", unit,binary?"binary":"BDC");
+            if (Io704.Config.LogIO != null)
+                Io704.LogIO.WriteLine("Tape {0} start write {1}", unit, binary ? "binary" : "BDC");
         }
         public int CPY(ref ulong w) /* Copy */
         {
@@ -129,13 +136,13 @@ namespace Sim704
             {
                 if (eof)
                 {
-                    if (Io704.Config.LogIO!=null)
+                    if (Io704.Config.LogIO != null)
                         Io704.LogIO.WriteLine("Tape {0} EOF", unit);
                     ret = 1;
                 }
                 else if (PosInRecord >= RRecord.Length)
                 {
-                    if (Io704.Config.LogIO!=null)
+                    if (Io704.Config.LogIO != null)
                         Io704.LogIO.WriteLine("Tape {0} EOR", unit);
                     ret = 2;
                 }
@@ -143,14 +150,14 @@ namespace Sim704
                 {
                     w = RRecord[PosInRecord++];
                     ALU.MQ = (W36)w;
-                    if (Io704.Config.LogIO!=null)
-                        Io704.LogIO.WriteLine("Copy {0} from Tape {1}",  ALU.MQ,unit);
+                    if (Io704.Config.LogIO != null)
+                        Io704.LogIO.WriteLine("Copy {0} from Tape {1}", ALU.MQ, unit);
                 }
             }
             else if (WriteActive)
             {
                 ALU.MQ = (W36)w;
-                if (Io704.Config.LogIO!=null)
+                if (Io704.Config.LogIO != null)
                     Io704.LogIO.WriteLine("Copy {0} to Tape {1}", ALU.MQ, unit);
                 WRecord.Add(w);
             }
@@ -161,21 +168,21 @@ namespace Sim704
         public void BST() /* Backspace */
         {
             EndRW();
-            if (Io704.Config.LogIO!=null)
+            if (Io704.Config.LogIO != null)
                 Io704.LogIO.WriteLine("Tape {0} Backspace", unit);
             f.BackSpace();
         }
         public void WEF() /* Write End of File */
         {
             EndRW();
-            if (Io704.Config.LogIO!=null)
+            if (Io704.Config.LogIO != null)
                 Io704.LogIO.WriteLine("Tape {0} Write EOF", unit);
             f.WriteEOF();
         }
         public void REW() /* Rewind */
         {
             EndRW();
-            if (Io704.Config.LogIO!=null)
+            if (Io704.Config.LogIO != null)
                 Io704.LogIO.WriteLine("Tape {0} rewind", unit);
             f.Rewind();
         }

@@ -10,7 +10,7 @@ namespace Sim704
         FileStream f;
         Stack<long> recpos; /* start positions of records in file */ 
         bool stored; /* true:fist byte of record already read */
-        int last;  /* value of first byte or -1 for eom*/
+        int last;  /* value of first byte or -1 for end of media (EOM) */
         public int NumOfRecords()
         {
             return recpos.Count;
@@ -19,34 +19,36 @@ namespace Sim704
         {
             /* P7B Format */
             /* A tape is a sequence of records */
-            /* A record is a sequence of characters. Bits 0-6: character including parity, Bit 7: Recordmarker */
-            /* The first byte of a records has bit 7 set, all following have bit 7 not set */
+            /* A record is a sequence of bytes. Bits 0-5: character, Bit 6:parity, Bit 7: recordmarker */
+            /* The first byte of a record has bit 7 set, all following bytes have bit 7 not set */
+            /* The parity of all bytes in a recored is the same 
+            /* the recordmarker is ignored for parity calculation */
             /* even parity= bcd record, odd parity=binary record */
-            /* bcd record with length 1 and value 15dez is EOF marker */
+            /* A bcd record with length 1 and value bit 0-5=15dez is EOF (End of File) marker */
 
             f = new FileStream(name, rdonly ? FileMode.Open:FileMode.OpenOrCreate, rdonly? FileAccess.Read:FileAccess.ReadWrite);
-            recpos = new Stack<long>();
+            recpos = new Stack<long>(); /* stack to store the startpositions of the records, used for backspace */
             stored = false;
         }
 
-        public int ReadRecord(out bool binary, out byte[] mrecord) /* reads a record as array of 6-bit value from tape-file, retun -1:ende of input file 0: EOF marker read, 1: record read; binary=true: binary record false: bcd record */
+        public int ReadRecord(out bool binary, out bool parityerror, out byte[] mrecord) /* reads a record as array of 6-bit values from tape-file, return -1:end of tape-file 0: EOF marker read, 1: a record was read; binary=true: binary record false: bcd record, parityerror=true if parity error */
         {
             int b; /* current character */
             mrecord = null;
             binary = false;
-
+            parityerror = false;
             if (stored) /* fist byte of record already read? */
             {
                 b = last; /* use it */
                 stored = false;
             }
             else
-                b = f.ReadByte(); /* read byte */
+                b = f.ReadByte(); /* read first byte */
 
             if (b < 0) /* end of media ? */
                 return -1; /* EOM */
-            recpos.Push(f.Position - 1); /* store startposition of record for backspace*/
-            if ((b & 128) == 0)  /* The first byte of a records must have bit 7 set */
+            recpos.Push(f.Position - 1); /* store the startposition of the record on stack, used for backspace*/
+            if ((b & 128) == 0)  /* The first byte of a record must have bit 7 set */
                 throw new InvalidDataException("TapeFile:Bit 7 not set at record start");
             List<byte> trecord = new List<byte>() { (byte)(b & 127) }; /* remove record start marker, store character */
             do
@@ -54,47 +56,46 @@ namespace Sim704
                 b = f.ReadByte();
                 if (b < 0 || (b & 128) != 0) /* next record or EOF */
                 {
-                    stored = true; /* set flag */
-                    last = b; /* store value for next call*/
+                    stored = true; /* first byte of next record is already read, set flag */
+                    last = b; /* store byte value */
                     break;
                 }
                 trecord.Add((byte)b);
             }
             while (true);
-            TapeConverter.FromTape(trecord.ToArray(), out binary, out mrecord);
-            if (!binary && mrecord.Length == 1 && mrecord[0] == 15)
+            parityerror=TapeConverter.FromTape(trecord.ToArray(), out binary, out mrecord); /* convert to memory format, check parity */
+            if (!binary && mrecord.Length == 1 && mrecord[0] == 15) /* check for EOF */
                 return 0; /* EOF */
             return 1; /* no EOF */
         }
         public void BackSpace()
         {
-            if (recpos.Count > 0)
+            if (recpos.Count > 0) /* any records already read ?*/
             {
-                long pos=recpos.Pop(); /* read startpos of previous record */
-                f.Seek(pos, SeekOrigin.Begin);
+                long pos=recpos.Pop(); /* read startpos of previous record from stack */
+                f.Seek(pos, SeekOrigin.Begin); /* go to that position*/
             }
             else
-                f.Seek(0, SeekOrigin.Begin);
+                f.Seek(0, SeekOrigin.Begin); /* go to start of file */
             stored = false;
         }
         public void Rewind()
         {
-            f.Seek(0, SeekOrigin.Begin);
-            recpos.Clear();
+            f.Seek(0, SeekOrigin.Begin); /* go to start of file */
+            recpos.Clear(); /* clear stack */
             stored = false;
         }
         public void WriteRecord(bool binary, byte[] mrecord)
         {
-            if (stored && last != -1)
-                f.Seek(-1, SeekOrigin.Current);
+            if (stored && last != -1)  /* first byte of record already read ? */
+                f.Seek(-1, SeekOrigin.Current); /* go back to start of record */
             stored = false;
-            TapeConverter.ToTape(binary, mrecord, out byte[] trecord);
-            recpos.Push(f.Position);
+            TapeConverter.ToTape(binary, mrecord, out byte[] trecord); /* convert to tape format, generate parity */
+            recpos.Push(f.Position); /* store startpos of record on stack */
             trecord[0] |= 0x80;  /* add record marker */
             f.Write(trecord, 0, trecord.Length);
-            if (f.Position != f.Length)  /* not at end of file? */
-                f.SetLength(f.Position); /* cut remaining parts */
-
+            if (f.Position != f.Length)  /* currently not at end of the tape-file? */
+                f.SetLength(f.Position); /* cut remaining parts of the file */
         }
         public void WriteEOF()
         {
@@ -119,19 +120,19 @@ namespace Sim704
     }
     public static class TapeConverter /* Converter between raw tape records and bcd/binary records */
     {
-        /* Data on Tape ist sequence of 6 bit values: bits 0-5: character, Bit 6: parity */
-        /* The parity (even/odd) of all bytes from a records is the same*/
+        /* The raw data on tape is a sequence of 6 bit values: bits 0-5: character, Bit 6: parity */
+        /* The parity (even/odd) of all bytes from a record is the same*/
         /* Odd parity: binary record */
         /* binary records can contain any 6 bit data */
-        /* Even Parity: BCD eecord*/
-        /* BCD Record cannot contain a Zero */
-        /* for BCD Record a conversion from tapeformat to memoryformat is performed */
-        /* Tape 10dez -> Memory 0 (BCD '0') and if bit 4 is set, bit 5 is inverted: fomr tape to mem  BDC   'A'-'I' is swapped with 'S'-'Z' */
+        /* Even Parity: BCD record*/
+        /* BCD Records cannot contain a zero */
+        /* For BCD records a conversion from tapeformat to memoryformat takes place */
+        /* tape 10dez <-> memory 0dez (=BCD '0') and if bit 4 is set, bit 5 is inverted ('A'-'I' <-> 'S'-'Z') */
 
         static int[] tape2mem = null;  /* bcd conversion tape -> mem */
-        static int[] mem2tape = null;  /* bcd conversion mem  -> tape */
+        static int[] mem2tape = null;  /* bcd conversion mem -> tape */
         static bool[] oddparity = null; /* 7-Bit parity table: true = odd parity */
-        static TapeConverter() /* statischer constructor, fills oddparity and tape2mem,mem2tape */
+        static TapeConverter() /* static constructor, called at start, fills oddparity and tape2mem,mem2tape */
         {
             oddparity = new bool[128];
             for (int i = 0; i < 128; i++) /* for all 7-bit values */
@@ -170,16 +171,16 @@ namespace Sim704
                     m = t ^ 32;
                 else
                     m = t;
-                tape2mem[t] = m;  /* wert speichern */
+                tape2mem[t] = m;  /* store value */
             }
         }
-        public static void ToTape(bool binary, byte[] mrecord, out byte[] trecord) /* converts record from Binary/BCD into raw tape format */
+        public static void ToTape(bool binary, byte[] mrecord, out byte[] trecord) /* converts a record from Binary/BCD into raw tape format */
         {
             trecord = new byte[mrecord.Length];
             for (int i = 0; i < mrecord.Length; i++)
             {
                 byte b = mrecord[i];
-                if ((b & 128) != 0)
+                if ((b & 128) != 0) 
                     throw new InvalidDataException("TapeConverter:invalid bit 7 set in mem");
                 if ((b & 64) != 0)
                     throw new InvalidDataException("TapeConverter:invalid bit 6 set in mem");
@@ -190,21 +191,21 @@ namespace Sim704
                     b = (byte)mem2tape[b];
                 }
                 if (binary != oddparity[b])
-                    b |= 0x40;
+                    b |= 0x40; /* add parity */
                 trecord[i] = b;
             }
         }
-        public static bool FromTape(byte[] trecord, out bool binary, out byte[] mrecord) /* converts record from raw tape format into Binary/BCD record  return value: parity error*/
+        public static bool FromTape(byte[] trecord, out bool binary, out byte[] mrecord) /* converts a record from raw tape format into Binary/BCD record.  return value true=parity error*/
         {
             bool parityerror = false;
 
-            binary = oddparity[trecord[0]]; /* odd parity -> binary file */
+            binary = oddparity[trecord[0]]; /* odd parity on first char -> binary file */
             mrecord = new byte[trecord.Length];
             for (int j = 0; j < trecord.Length; j++)
             {
                 if ((trecord[j] & 128) != 0)
                     throw new InvalidDataException("TapeConverter:bit 7 is set on tape");
-                if (binary != oddparity[trecord[j]]) /*parity check */
+                if (binary != oddparity[trecord[j]]) /* parity check */
                     parityerror = true;
                 if (binary)
                     mrecord[j] = (byte)(trecord[j] & 63); /* copy binary data */
@@ -219,7 +220,7 @@ namespace Sim704
             return parityerror;
         }
     }
-    public static class CBNConverter /* Converter betwen binary cards in RCD format and CBN card format */
+    public static class CBNConverter /* Converter between binary cards in RCD format and CBN card format */
     {
         public static byte[] ToCBN(ulong[] mrecord) /* convert card from RCD Format to CBN format */
         {
@@ -241,7 +242,7 @@ namespace Sim704
                 }
             return trecord;
         }
-        public static void FromCBN(byte[] trecord, out ulong[] mrecord) /* convert  card from CBN Format to RCD format */
+        public static void FromCBN(byte[] trecord, out ulong[] mrecord) /* convert card from CBN Format to RCD format */
         {
             if (trecord.Length != 160)
                 throw new Exception("wrong record length");
@@ -308,7 +309,7 @@ namespace Sim704
             }
             return err;
         }
-        public static void BCDToCBN(byte[] bcd, int start, byte[] trecord) /* Convert BCD zu Hollerith Column Binary  */
+        public static void BCDToCBN(byte[] bcd, int start, byte[] trecord) /* Convert BCD to Hollerith Column Binary  */
         {
             int x = start * 2;
             foreach (byte b in bcd)
@@ -328,7 +329,7 @@ namespace Sim704
             s = BcdConverter.BcdToString(bcd);
             return err;
         }
-        public static void StringToCBN(string s, int start, byte[] trecord) /* Convert string zu Hollerith Column Binary  */
+        public static void StringToCBN(string s, int start, byte[] trecord) /* Convert string to Hollerith Column Binary  */
         {
             BCDToCBN(BcdConverter.StringToBcd(s), start, trecord);
         }
@@ -345,7 +346,7 @@ namespace Sim704
             "40-","41J","42K","43L","44M","45N","46O","47P","50Q","51R","52!","53$","54*","55]","56;","57^", 
             "60 ","61/","62S","63T","64U","65V","66W","67X","70Y","71Z","72|","73,","74(","75~","76\\","77\"" 
         };
-        static BcdConverter() /* static Construktor */
+        static BcdConverter() /* static constructor */
         {
             int i;
             asc2bcd = new Dictionary<char, int>();
