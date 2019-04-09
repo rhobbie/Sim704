@@ -102,7 +102,8 @@ namespace Sim704
                     if (parity_error || binary != rbinary)
                     {
                         Io704.tapecheck = true;
-                        Io704.LogIO.WriteLine("Tapecheck error");
+                        if (Io704.Config.LogIO != null)
+                            Io704.LogIO.WriteLine("Tapecheck error");
                     }
                     RRecord = new ulong[(mrecord.Length + 5) / 6];
                     if (Io704.Config.LogIO != null)
