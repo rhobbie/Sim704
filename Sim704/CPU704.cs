@@ -1373,10 +1373,10 @@ namespace Sim704
                             if (!splus) /*-634 SXD Store index in Decrement*/
                             {
                                 DebugAT("SXD");
-                                if (SR.T != 0 && SR.T != 1 && SR.T != 2 && SR.T != 4)
-                                    throw new Exception("Warning, multiple index registers, see page 26 / SXD");
+                                
                                 W36 temp = LoadCYni();
                                 temp.D = (W15)(uint)GetX();
+                                SetX((WA)(uint)temp.D); /* set to handle multiple index register */
                                 CoreMemory.C(GetYni(), temp);
                                 inst = true;
                             }
@@ -1415,9 +1415,9 @@ namespace Sim704
                             if (!splus) /* -754 PXD Place Index in Decrement*/
                             {
                                 DebugAT0("PXD");
-                                if (SR.T != 0 && SR.T != 1 && SR.T != 2 && SR.T != 4)
-                                    throw new Exception("Warning, multiple index registers, see page 26 / PXD");
-                                ALU.PXD(GetX());
+                                WA tmp = GetX();
+                                SetX(tmp);  /* hanlde case of multiple index register specified*/
+                                ALU.PXD(tmp);
                                 inst = true;
                             }
                             break;
