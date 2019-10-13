@@ -95,175 +95,157 @@ namespace Sim704
             /* The C(Y) are algebraically added to the C(AC), 
              * and this sum replaces the C(AC) and the C(MQ). 
              * The C(Y) are unchanged. Floating-point addition 
-             * takes place in the following way: */
-
-            bool tmpacoflag = false;
-            bool tmpmqoflag = false;
-            /*  1. The MQ is cleared. */
+             * takes place in the following way:
+             /*  1. The MQ is cleared. */
             MQ = new W36();
+            /*  2. The C(Y) are placed in the SR. */
             /*  3. If the characteristic in the SR is less than the 
-             *  characteristic in the AC, the C(SR) and the C(AC) 
-             *  interchange automatically because the number with 
-             *  the smaller characteristic must appear in the AC be-
-             *  fore addition can take place. (Positions Q and P of 
-             *  the AC are considered as part of the characteristic. 
-             *  Consequently, a 1 in either of these positions makes 
-             *  the characteristic in the AC larger than that in the 
-             *  SR, but the 1's would be lost during the interchange 
-             *  and an incorrect answer will result.) */
-            /* Extract AC char */
-            int shiftcnt = (int)(uint)AC.C10;
-            /* Diff SR char */
-            shiftcnt -= (int)(uint)SR.C;
-            if (shiftcnt > 0) /* AC Bigger */
+            *  characteristic in the AC, the C(SR) and the C(AC) 
+            *  interchange automatically because the number with 
+            *  the smaller characteristic must appear in the AC be-
+            *  fore addition can take place. (Positions Q and P of 
+            *  the AC are considered as part of the characteristic. 
+            *  Consequently, a 1 in either of these positions makes 
+            *  the characteristic in the AC larger than that in the 
+            *  SR, but the 1's would be lost during the interchange 
+            *  and an incorrect answer will result.) */
+            if (SR.C < AC.C10)
             {
-                /* Exchange AC & SR */
-                W38 tmp = AC;
-                AC = new W38 { S = SR.S, M37 = (W37)SR.M };
-                SR = new W36 { S = tmp.S, M = tmp.M35 };
+                W36 tmp = new W36() { S = AC.S, M = AC.M35 };
+                AC = new W38() { S = SR.S, M35 = SR.M };
+                SR = tmp;
             }
-            else /* SR Bigger then AC, AC Smaller */
-                shiftcnt = -shiftcnt; /* Change sign */
-
-            uint fptemp = SR.C; /* Get exponent */
-            /* Save AC & SR signs */
-            W1 f1 = AC.S;
-            W1 f2 = SR.S;
-
-            /* Clear sign */
-            SR.S = new W1();
-            /* Clear char and sign */
-            AC.S = new W1();
-            AC.C10 = new W10();
-
+            /*  4. The MQ is given the same sign as the AC.*/
+            MQ.S = AC.S;
             /*  5. The fraction in the AC is shifted right the num-
-             *  ber of positions equal to the magnitude of the differ-
-             *  ence in the characteristics. Bits shifted out of the 
-             *  AC enter position 9 of the MQ. Bits shifted out of 
-             *  position 35 of the MQ are lost. */
-            shiftcnt &= 255;
-
+            *  ber of positions equal to the magnitude of the differ-
+            *  ence in the characteristics. Bits shifted out of the 
+            *  AC enter position 9 of the MQ. Bits shifted out of 
+            *  position 35 of the MQ are lost. */
+            int shiftcnt = (int)(SR.C - AC.C10);
             if (shiftcnt < 27)
             {
-                MQ.F = (W27)(AC << (27 - shiftcnt));
-                AC = (W38)(AC >> shiftcnt);
+                MQ.F = (W27)(AC.F << (27 - shiftcnt));
+                AC.F = (W27)(AC.F >> shiftcnt);
             }
             else
             {
                 if (shiftcnt < 54)
-                    MQ = (W36)(AC >> (shiftcnt - 27));
+                    MQ.F = (W27)(AC.F >> (shiftcnt - 27));
                 else
-                    MQ = new W36();
+                    MQ.F = new W27();
                 AC = new W38();
             }
+            /*  6. The characteristic in the SR replaces the C(AC)1-8. */
+            AC.C10 = (W10)(uint)SR.C;
             /*  7. The fraction in the SR is algebraically added to 
-             *  the fraction in the AC and this sum replaces the 
-             *  C(AC)S,9-35.  */
-            /* Do add */
-            if (f2 != f1)
+            *  the fraction in the AC and this sum replaces the 
+            *  C(AC)S,9-35. */
+            if (AC.S != SR.S) /* Signs unlike? */
             {
-                AC = (W38)(AC - SR.F);
-                /* If AC < 0 then SR was larger */
-                if (AC.S != 0)
+                if (AC.F < SR.F)
                 {
-                    AC = (W38)~AC;
-                    if (MQ.F != 0)
-                    {
-                        MQ.F = (W27)~MQ.F;
-                        MQ = (W36)(MQ + 1);
-                    }
-                    else
-                        AC = (W38)(AC + 1);
+                    AC.F = (W27)(SR.F - AC.F);
+                    AC.S = SR.S;
                 }
                 else
-                    f2 = (W1)~f2; /* Change sign of AC */
+                    AC.F = (W27)(AC.F - SR.F);
             }
-            else
-                AC = (W38)(AC + SR.F);
-
-            /*  8. If the magnitude of the sum is greater than or 
-             *  equal to 1, there is a carry from position 9 to position 
-             *  8 of the AC (thus increasing the characteristic by 1).* 
-             *  In this event, the C(AC)9-35 and the C(MQ)9-35 are 
-             *  shifted right one position and 1 is inserted in posi-
-             *  tion 9 of the AC. */
-
-            /* Check for overflow */
-            if ((AC.C10 & 1) != 0)
+            else /* Signs alike */
             {
-                if ((AC & 1) != 0)
-                    MQ.C = (W8)(MQ.C | 1);
-                AC = (W38)(AC >> 1);
-                MQ = (W36)(MQ >> 1);
-
-                /* OV check */
-                if (fptemp == 255)
+                uint sum = AC.F + SR.F;
+                /*  8. If the magnitude of the sum is greater than or 
+                *  equal to 1, there is a carry from position 9 to position 
+                *  8 of the AC (thus increasing the characteristic by 1).* 
+                *  In this event, the C(AC)9-35 and the C(MQ)9-35 are 
+                *  shifted right one position and 1 is inserted in posi-
+                *  tion 9 of the AC. */
+                if (sum >> 27 != 0)
                 {
-                    tmpacoflag = true;
-                    tmpmqoflag = true;
+                    AC.C10 = (W10)(AC.C10 + 1);
+                    MQ.F = (W27)(MQ.F >> 1);
+                    MQ.B9 = (W1)(sum & 1);
+                    AC.F = (W27)(sum >> 1);
                 }
-                fptemp++;
+                else
+                    AC.F = (W27)sum;
             }
-
-            /*  9b. If the magnitude of the resulting fraction in 
-             *  the AC is not in normal form (i.e. less than 1/2 but 
-             *  not zero), and the signs of the MQ and AC are the 
-             *  same, the C(AC)9-35 and the C(MQ)9-35 are shifted 
-             *  left until a 1 is in position 9 of the AC. Bits enter 
-             *  position 35 of the AC from position 9 of the MQ. The 
-             *  characteristic in the AC is reduced by 1 for each posi-
-             *  tion shifted.* If the signs of the MQ and AC are differ
-             *  ent, the magnitude of the fraction in the AC is reduced 
-             *  by 1 before the shifting is begun. Each bit entering 
-             *  position 35 of the AC from position 9 of the MQ is 
-             *  inverted. */
-            /* Are we normalizing */
             if (norm)
             {
-                while (AC.B9 == 0 &&
-                       AC.F != 0) /* 704 does not check MQ when normalizing */
-                {
-
-                    MQ = (W36)(MQ << 1);
-                    AC = (W38)(AC << 1);
-                    if ((MQ.C & 1) != 0)
-                    {
-                        AC = (W38)(AC | 1);
-                        MQ.C = (W8)(MQ.C & 0xFE);
-                    }
-                    if (fptemp == 0 && !tmpmqoflag)
-                        tmpacoflag = true;
-                    fptemp--;       /* UF Check */
-                }
                 /*  9a. If the resulting fraction in the AC is zero, the 
-                 *  AC is cleared, yielding a normal zero. The sign of the 
-                 *  AC is the sign of the number that has the smaller 
-                 *  characteristic. If both characteristics are equal, then 
-                 *  the sign of the AC is the sign of the number in the AC. */
-                if (AC == 0 && MQ == 0)
+                *  AC is cleared, yielding a normal zero. The sign of the 
+                *  AC is the sign of the number that has the smaller 
+                *  characteristic. If both characteristics are equal, then 
+                *  the sign of the AC is the sign of the number in the AC. */
+                if (AC.F == 0)
                 {
-                    fptemp = 0;
-                    f2 |= f1;
+                    AC.M37 = new W37();
+                    return;
+                }
+                /*  9b. If the magnitude of the resulting fraction in 
+                *  the AC is not in normal form (i.e. less than 1/2 but 
+                *  not zero), and the signs of the MQ and AC are the 
+                *  same, the C(AC)9-35 and the C(MQ)9-35 are shifted 
+                *  left until a 1 is in position 9 of the AC. Bits enter 
+                *  position 35 of the AC from position 9 of the MQ. The 
+                *  characteristic in the AC is reduced by 1 for each posi-
+                *  tion shifted.* If the signs of the MQ and AC are differ
+                *  ent, the magnitude of the fraction in the AC is reduced 
+                *  by 1 before the shifting is begun. Each bit entering 
+                *  position 35 of the AC from position 9 of the MQ is 
+                *  inverted.*/
+                else
+                {
+                    if (AC.S != MQ.S)
+                        AC.F = (W27)(AC.F - 1);
+                }
+                while (AC.B9 == 0)
+                {
+                    AC.F = (W27)(AC.F << 1);
+                    if (AC.S == MQ.S)
+                        AC.F = (W27)(AC.F | MQ.B9);
+                    else
+                        AC.F = (W27)(AC.F | (W1)~MQ.B9);
+                    MQ.F = (W27)(MQ.F << 1);
+                    AC.C10 = (W10)(AC.C10 - 1);
                 }
             }
-
-            /* Put pieces back together */
-            AC.C10 = (W10)fptemp;
-            AC.S = new W1();
-            MQ.C = new W8();
-            MQ.S = new W1();
-            if (AC != 0)
+            /*  10. The MQ is given a characteristic which is 27 
+            *  less than the characteristic in the AC, unless the AC 
+            *  contains a normal zero in which case zeros are placed 
+            *  in positions 1-8 of the MQ.* */
+            uint cmq = AC.C10 - 27;
+            MQ.C = (W8)(cmq);
+            /*  11. If the signs of the MQ and AC are different, 
+            *  the magnitude of the fraction in the AC is increased 
+            *  by 1. If a carry occurs between positions 8 and 9, 
+            *  the C(AC)9-35 are shifted right one place and a one is 
+            *  inserted in C(AC)9. If the carry from 9 to 8 occurs, 
+            *  the characteristic of the AC is increased by 1.*/
+            if (norm && (MQ.S != AC.S))
             {
-                if (fptemp < 27 && !acoflag)
-                    mqoflag = true;
-                fptemp -= 27;
-                MQ.C = (W8)fptemp;
+                uint sum = AC.F + 1;
+
+                if (sum >> 27 != 0)
+                {
+                    AC.F = (W27)(sum >> 1);
+                    AC.C10 = (W10)(AC.C10 + 1);
+                }
+                else
+                    AC.F = (W27)sum;
             }
-            AC.S = MQ.S = f2;
-            if (tmpacoflag)
-                acoflag = true;
-            if (tmpmqoflag)
+            /*  * During execution of a floating-point addition, 
+            *    the AC or MQ overflow indicator and the corre-
+            *    sponding light on the operator's console are 
+            *    turned on by too large a characteristic (over-
+            *    flow-characteristic greater than 255) or too small 
+            *    a characteristic (underflow-characteristic nega-
+            *    tive) in the AC or the MQ, respectively. */
+
+            if ((cmq & 0x100) != 0)
                 mqoflag = true;
+            if (AC.PB != 0)
+                acoflag = true;
         }
         static void Fmpy(bool norm)
         {
@@ -411,7 +393,7 @@ namespace Sim704
             AC.S = f2; /* Sign does not change */
             return false;
         }
-        #region Fixed-Point Arithmetic Operations
+#region Fixed-Point Arithmetic Operations
         /* The following instructions refer to aritmetic operations using fixed-point data.*/
         public static void CLA(WA Y) /* Clear and Add */
         {
@@ -492,10 +474,10 @@ namespace Sim704
         {
             /* If position of the MQ contains a 1, the magnitude
              * of the C(AC) is increased by a 1 in position 35. If
-             * position 1 of the MA contains a zero, the C(AC) re-
+             * position 1 of the MQ contains a zero, the C(AC) re-
              * main unchanged. In either case, the C(MQ) are un-
              * changed. AC overflow is possible.*/
-            if ((MQ & 1) != 0)
+            if (MQ.B1 != 0)
             {
                 W1 Pold = AC.PB;
                 AC.M37 = (W37)(AC.M37 + 1);
@@ -605,8 +587,8 @@ namespace Sim704
             /* A negative sign replaces the C(AC)S.*/
             AC.S = new W1(1);
         }
-        #endregion
-        #region Logical Operations
+#endregion
+#region Logical Operations
         public static void CAL(WA Y) /* Clear and Add Logical Word */
         {
             /* This instruction replaces the C(AC)P,1-35 with the 
@@ -697,8 +679,8 @@ namespace Sim704
              * is unchanged */
             AC.M37 = (W37)~AC.M37;
         }
-        #endregion
-        #region Shifting Operations
+#endregion
+#region Shifting Operations
         public static void ALS(WA Y) /* Accumulator Left Shift */
         {
             /* The C(AC)Q,P,1-35 are shifted left Y module 256
@@ -884,76 +866,10 @@ namespace Sim704
 
 
         }
-        #endregion
-        #region Floating-Point Arithmetic Operations
+#endregion
+#region Floating-Point Arithmetic Operations
         public static void FAD(WA Y) /* Floating ADD */
         {
-            /* The C(Y) are algebraically added to the C(AC), 
-             * and this sum replaces the C(AC) and the C(MQ). 
-             * The C(Y) are unchanged. Floating-point addition 
-             * takes place in the following way:
-             *  1. The MQ is cleared.
-             *  2. The C(Y) are placed in the SR.
-             *  3. If the characteristic in the SR is less than the 
-             *  characteristic in the AC, the C(SR) and the C(AC) 
-             *  interchange automatically because the number with 
-             *  the smaller characteristic must appear in the AC be-
-             *  fore addition can take place. (Positions Q and P of 
-             *  the AC are considered as part of the characteristic. 
-             *  Consequently, a 1 in either of these positions makes 
-             *  the characteristic in the AC larger than that in the 
-             *  SR, but the 1's would be lost during the interchange 
-             *  and an incorrect answer will result.)
-             *  4. The MQ is given the same sign as the AC.
-             *  5. The fraction in the AC is shifted right the num-
-             *  ber of positions equal to the magnitude of the differ-
-             *  ence in the characteristics. Bits shifted out of the 
-             *  AC enter position 9 of the MQ. Bits shifted out of 
-             *  position 35 of the MQ are lost.
-             *  6. The characteristic in the SR replaces the C(AC)1-8.
-             *  7. The fraction in the SR is algebraically added to 
-             *  the fraction in the AC and this sum replaces the 
-             *  C(AC)S,9-35. 
-             *  8. If the magnitude of the sum is greater than or 
-             *  equal to 1, there is a carry from position 9 to position 
-             *  8 of the AC (thus increasing the characteristic by 1).* 
-             *  In this event, the C(AC)9-35 and the C(MQ)9-35 are 
-             *  shifted right one position and 1 is inserted in posi-
-             *  tion 9 of the AC.
-             *  9a. If the resulting fraction in the AC is zero, the 
-             *  AC is cleared, yielding a normal zero. The sign of the 
-             *  AC is the sign of the number that has the smaller 
-             *  characteristic. If both characteristics are equal, then 
-             *  the sign of the AC is the sign of the number in the AC.
-             *  9b. If the magnitude of the resulting fraction in 
-             *  the AC is not in normal form (i.e. less than 1/2 but 
-             *  not zero), and the signs of the MQ and AC are the 
-             *  same, the C(AC)9-35 and the C(MQ)9-35 are shifted 
-             *  left until a 1 is in position 9 of the AC. Bits enter 
-             *  position 35 of the AC from position 9 of the MQ. The 
-             *  characteristic in the AC is reduced by 1 for each posi-
-             *  tion shifted.* If the signs of the MQ and AC are differ
-             *  ent, the magnitude of the fraction in the AC is reduced 
-             *  by 1 before the shifting is begun. Each bit entering 
-             *  position 35 of the AC from position 9 of the MQ is 
-             *  inverted.
-             *  10. The MQ is given a characteristic which is 27 
-             *  less than the characteristic in the AC, unless the AC 
-             *  contains a normal zero in which case zeros are placed 
-             *  in positions 1-8 of the MQ.*
-             *  11. If the signs of the MQ and AC are different, 
-             *  the magnitude of the fraction in the AC is increased 
-             *  by 1. If a carry occurs between positions 8 and 9, 
-             *  the C(AC)9-35 are shifted right one place and a one is 
-             *  inserted in C(AC)9. If the carry from 9 to 8 occurs, 
-             *  the characteristic of the AC is increased by 1.
-             *  * During execution of a floating-point addition, 
-             *    the AC or MQ overflow indicator and the corre-
-             *    sponding light on the operator's console are 
-             *    turned on by too large a characteristic (over-
-             *    flow-characteristic greater than 255) or too small 
-             *    a characteristic (underflow-characteristic nega-
-             *    tive) in the AC or the MQ, respectively. */
             SR = CoreMemory.C(Y);
             Fadd(true);
         }
@@ -1105,8 +1021,8 @@ namespace Sim704
             SR = CoreMemory.C(Y);
             Fdiv();
         }
-        #endregion
-        #region Control Operations
+#endregion
+#region Control Operations
         public static bool TZE() /* Transfer on Zero*/
         {
             /* IF the C(AC),Q,P,1-35 are zero, the calculator takes 
@@ -1276,8 +1192,8 @@ namespace Sim704
             }
             return 0;
         }
-        #endregion
-        #region Indexing Operations
+#endregion
+#region Indexing Operations
         public static WA PAX() /* Place Address in Index */
         {
             /* Not indexable The adress part of the C(AC) re-
@@ -1299,6 +1215,6 @@ namespace Sim704
              * ment part of the AC. */
             AC = new W38 { D = (W15)(uint)X };
         }
-        #endregion
+#endregion
     }
 }

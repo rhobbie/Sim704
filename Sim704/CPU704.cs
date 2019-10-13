@@ -1102,8 +1102,8 @@ namespace Sim704
                         case 144: /*220*/
                             if (splus) /*+220 DVH Divide or HALT*/
                             {
-                                halt = ALU.DVH(GetY());
                                 DebugAT("DVH");
+                                halt = ALU.DVH(GetY());
                                 inst = true;
                             }
                             break;

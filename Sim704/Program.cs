@@ -8,7 +8,7 @@ namespace Sim704
         {
             if (args.Length != 1)
             {
-                Console.Error.WriteLine("Sim704 Version 0.1");
+                Console.Error.WriteLine("Sim704 Version 0.2");
                 Console.Error.WriteLine("Usage: Sim704 config.xml");
                 return;
             }
