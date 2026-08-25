@@ -222,7 +222,7 @@ namespace Sim704
                     break;
                 case 12: /* Drum */
                     if (CurrSubUnit < 1 || CurrSubUnit > 8)
-                        throw new InvalidOperationException(string.Format("Invalid drum {0} selected for read", CurrSubUnit));
+                        throw new InvalidOperationException(string.Format("Invalid drum {0} selected for write", CurrSubUnit));
                     OpenDrum(CurrSubUnit);
                     DR[CurrSubUnit - 1].WDR();
                     currdev = DR[CurrSubUnit - 1];

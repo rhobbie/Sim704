@@ -24,9 +24,12 @@ namespace Sim704
         }
         public void UnMountDeck()
         {
-            Disconnect();            
-            f.Dispose();
-            f = null;
+            Disconnect();
+            if (f != null)
+            {
+                f.Dispose();
+                f = null;
+            }
         }
         void EndRW() /* finish current reading or writing operation */
         {            
@@ -67,7 +70,8 @@ namespace Sim704
         }
         public void SPU(uint unit) /* Sense Punch */
         {            
-            Io704.LogIO.WriteLine("Sense Punch {0}", unit);
+            if (Io704.Config.LogIO != null)
+                Io704.LogIO.WriteLine("Sense Punch {0}", unit);
             throw new NotImplementedException("SPU");
         }
         public void Disconnect() /* Disconnect from Device */

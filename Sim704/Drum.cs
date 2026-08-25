@@ -41,21 +41,23 @@ namespace Sim704
             if (f != null)
                 throw new InvalidOperationException(string.Format("Drum {0} already mounted", unit));
             if (file != null)
+            {
                 f = new FileStream(file, FileMode.OpenOrCreate);
+                int rlen = f.Read(byteBuffer, 0, byteBuffer.Length);
+                if (rlen == byteBuffer.Length && f.Length == byteBuffer.Length)
+                    for (int i = 0, p = 0; i < 2048; i++, p += 5)
+                    {
+                        W15 A = new W15(BitConverter.ToUInt16(byteBuffer, p));
+                        W15 D = new W15(BitConverter.ToUInt16(byteBuffer, p + 2));
+                        W3 T = new W3((uint)(byteBuffer[p + 4] & 15));
+                        W3 P = new W3((uint)(byteBuffer[p + 4] >> 4));
+                        Buffer[i] = new W36() { A = A, T = T, D = D, P = P };
+                    }
+                else if (rlen != 0)
+                    throw new FileLoadException("Drum file load error");
+            }
             else
                 f = null;
-            int rlen = f.Read(byteBuffer, 0, byteBuffer.Length);
-            if (rlen == byteBuffer.Length&& f.Length == byteBuffer.Length)
-                for (int i = 0, p = 0; i < 2048; i++, p += 5)
-                {
-                    W15 A = new W15(BitConverter.ToUInt16(byteBuffer, p));
-                    W15 D = new W15(BitConverter.ToUInt16(byteBuffer, p + 2));
-                    W3 T = new W3((uint)(byteBuffer[p + 4] & 15));
-                    W3 P = new W3((uint)(byteBuffer[p + 4] >> 4));
-                    Buffer[i] = new W36() { A = A, T = T, D = D, P = P };
-                }
-            else if (rlen != 0)
-                throw new FileLoadException("Drum file load error");
             dirty = false;
         }
         public void UnMountDrum() /* Unmount Drum and save to file*/
@@ -74,9 +76,12 @@ namespace Sim704
                 f.Seek(0, SeekOrigin.Begin);
                 f.Write(byteBuffer, 0, byteBuffer.Length);
             }
-            f.Close();
-            f.Dispose();
-            f = null;
+            if (f != null)
+            {
+                f.Close();
+                f.Dispose();
+                f = null;
+            }
             Buffer = null;
         }
         public int CPY(ref ulong w) /* Copy */

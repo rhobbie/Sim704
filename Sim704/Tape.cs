@@ -72,8 +72,11 @@ namespace Sim704
         public void UnMountTape() /* Unmount Tape on unit */
         {
             EndRW();
-            f.Dispose();
-            f = null;
+            if (f != null)
+            {
+                f.Dispose();
+                f = null;
+            }
         }
         public void RT(bool binary) /* Read Select*/
         {
@@ -128,7 +131,7 @@ namespace Sim704
             wbin = binary;
             WriteActive = true;
             if (Io704.Config.LogIO != null)
-                Io704.LogIO.WriteLine("Tape {0} start write {1}", unit, binary ? "binary" : "BDC");
+                Io704.LogIO.WriteLine("Tape {0} start write {1}", unit, binary ? "binary" : "BCD");
         }
         public int CPY(ref ulong w) /* Copy */
         {

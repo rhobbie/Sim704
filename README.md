@@ -102,12 +102,12 @@ When adding this option a logfile of every IO-operation is created.
 When using the same filename for both entries then both logs are merged into one file. 
 
 ```xml 
- <ExitAtHalt>1</ExitAtHalt>
+ <ExitOnHalt>1</ExitOnHalt>
 ```
 
 When adding this option the simulator automatically exits at the first halt. With value 2 it automatically continues at the first halt and exits at the second halt. 
  
-When no ExitAtHalt option is given then the simulator halts to a (very simple) console.
+When no ExitOnHalt option is given then the simulator halts to a (very simple) console.
 When hitting return at the console the simulator continues. 
 An x and return exits the simulator. A go followed by an octal value and return continues the simulator at the given address.
  

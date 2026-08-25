@@ -95,7 +95,7 @@ namespace Sim704
             /* The C(Y) are algebraically added to the C(AC), 
              * and this sum replaces the C(AC) and the C(MQ). 
              * The C(Y) are unchanged. Floating-point addition 
-             * takes place in the following way:
+             * takes place in the following way: */
              /*  1. The MQ is cleared. */
             MQ = new W36();
             /*  2. The C(Y) are placed in the SR. */

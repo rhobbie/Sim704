@@ -30,8 +30,11 @@ namespace Sim704
         public void UnMountDeck()
         {
             Disconnect();
-            f.Dispose();
-            f = null;
+            if (f != null)
+            {
+                f.Dispose();
+                f = null;
+            }
         }
         public void RDS() /* Read Select*/
         {

@@ -19,7 +19,7 @@ namespace Sim704
                     WA.SetMask(AdrMask);
                     break;
                 default:
-                    throw new InvalidOperationException("Wong Mem Size");
+                    throw new InvalidOperationException("Wrong Mem Size");
             }
         }
         public static W36 C(WA Y)

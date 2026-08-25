@@ -47,13 +47,16 @@ namespace Sim704
         public void UnMountPaper()
         {
             Disconnect();
-            if (linewasprinted)
+            if (f != null)
             {
-                Writeprintedlinetofile();
-                f.Write('\n');
+                if (linewasprinted)
+                {
+                    Writeprintedlinetofile();
+                    f.Write('\n');
+                }
+                f.Dispose();
+                f = null;
             }
-            f.Dispose();
-            f = null;
         }
         public void Flush()
         {

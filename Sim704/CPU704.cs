@@ -1076,7 +1076,7 @@ namespace Sim704
                             }
                             break;
                         case 114: /*162*/
-                            if (splus) /*+161 TQP Transfer on MQ Plus*/
+                            if (splus) /*+162 TQP Transfer on MQ Plus*/
                             {
                                 DebugAT("TQP");
                                 transferInst = true;
@@ -1234,7 +1234,7 @@ namespace Sim704
                             }
                             break;
                         case 272: /*420*/
-                            if (splus) /*+420 HTR Halt and Proceed*/
+                            if (splus) /*+420 HPR Halt and Proceed*/
                             {
                                 halt = true;
                                 DebugAT("HPR");
@@ -1466,7 +1466,7 @@ namespace Sim704
                                                 ALU.SSP();
                                                 inst = true;
                                             }
-                                            else/*-760...003 SSP Set Sign Plus*/
+                                            else/*-760...003 SSM Set Sign Minus*/
                                             {
                                                 Debug("SSM");
                                                 ALU.SSM();
@@ -1482,7 +1482,7 @@ namespace Sim704
                                             }
                                             break;
                                         case 7:  /*760...007*/
-                                            if (splus) /*-760...007 ETM Enter Trapping Mode*/
+                                            if (splus) /*+760...007 ETM Enter Trapping Mode*/
                                             {
                                                 Debug("ETM");
                                                 trapping = true;
@@ -1595,7 +1595,7 @@ namespace Sim704
                         case 500:/*764*/
                             if (splus) /* +764 BST Backspace Tape */
                             {
-                                DebugAT("BSR");
+                                DebugAT("BST");
                                 Io704.BST(GetY());
                                 inst = true;
                             }
