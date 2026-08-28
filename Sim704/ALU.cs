@@ -84,9 +84,9 @@ namespace Sim704
             }
             AC_M = (AC_M << 8) + MQ_C;
             long Q_C = Math.DivRem(AC_M, SR_M, out AC_M);
-            AC_M = (AC_M << 27) + MQ.F;
+            AC_M = (AC_M << 27) + MQ_F;
             long Q_F = Math.DivRem(AC_M, SR_M, out AC_M);
-            MQ = new W36() { S = Sign, C = (W8)Q_C, F = (W27)Q_F };
+            MQ = new W36() { S = Sign, C = (W8)(uint)Q_C, F = (W27)(uint)Q_F };
             AC.M37 = (W37)(ulong)AC_M;
             return false;
         }
@@ -134,7 +134,7 @@ namespace Sim704
                     MQ.F = (W27)(AC.F >> (shiftcnt - 27));
                 else
                     MQ.F = new W27();
-                AC = new W38();
+                AC.F = new W27();
             }
             /*  6. The characteristic in the SR replaces the C(AC)1-8. */
             AC.C10 = (W10)(uint)SR.C;
@@ -276,8 +276,8 @@ namespace Sim704
 
             long temp = Math.BigMul((int)(uint)MQ.F, (int)(uint)SR.F);
 
-            MQ = new W36 { F = (W27)(temp) };
-            AC = new W38 { F = (W27)(temp >> 27) };
+            MQ = new W36 { F = (W27)(uint)(temp) };
+            AC = new W38 { F = (W27)(uint)(temp >> 27) };
 
             /* Normalize the result */
             if (norm)
@@ -346,9 +346,15 @@ namespace Sim704
                 return true;
             }
 
-            /* Check for divide by 0 */
+            /* Check for Quotient 0 */
             if (AC.F == 0)
+            {
                 AC = new W38();
+                /* Inserted a clearing of S(AC) */
+                /* This follow the IBM 704 schematics and also the IBM 709 manual for this FDH step ("if S(AC) is minus, the sign is forced plus") */
+                /* The 1955 IBM 704 manual at FDH step 3 seems to have a small issue here ("The sign of the AC is the sign of the dividend" is not correct). */
+                f2 = (W1)0;
+            }
             else
             {
                 /* Split appart fraction and charateristics */
@@ -388,9 +394,9 @@ namespace Sim704
                 fptemp2 -= 27;
                 AC.C10 = (W10)(uint)fptemp2; /* UF check */
             }
-            /* Fix signs on results */
+            /* Set signs on results */
             MQ.S = f1;
-            AC.S = f2; /* Sign does not change */
+            AC.S = f2; 
             return false;
         }
 #region Fixed-Point Arithmetic Operations
@@ -1142,7 +1148,7 @@ namespace Sim704
              * next instruction and proceeds from there. If position
              * 35 contains a zero, the calculator takes the  next in-
              * struction in sequence */
-            return (uint)AC & 1;
+            return (uint)(ulong)AC & 1;
         }
         public static uint DCT() /*Divide Check Test */
         {

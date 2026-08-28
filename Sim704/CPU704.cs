@@ -7,7 +7,7 @@ namespace Sim704
         const int wlen = 1; /* Word length */
         const uint wmask = (1U << wlen) - 1U; /* mask for word */
 
-        uint w; /* 1 bit Word stored in 32 bit uint*/
+        readonly uint w; /* 1 bit Word stored in 32 bit uint*/
 
         public W1(uint value)
         {
@@ -31,7 +31,7 @@ namespace Sim704
         const int wlen = 3; /* Word length */
         const uint wmask = (1U << wlen) - 1U; /* mask for word */
 
-        uint w; /* 3 bit Word stored in 32 bit uint*/
+        readonly uint w; /* 3 bit Word stored in 32 bit uint*/
 
         public W3(uint value)
         {
@@ -55,7 +55,7 @@ namespace Sim704
         const int wlen = 8; /* Word length */
         const uint wmask = (1U << wlen) - 1U; /* mask for word */
 
-        uint w; /* 8 bit Word stored in 32 bit uint*/
+        readonly uint w; /* 8 bit Word stored in 32 bit uint*/
 
         public W8(uint value)
         {
@@ -79,7 +79,7 @@ namespace Sim704
         const int wlen = 10; /* Word length */
         const uint wmask = (1U << wlen) - 1U; /* mask for word */
 
-        uint w; /* 10 bit Word stored in 32 bit uint*/
+        readonly uint w; /* 10 bit Word stored in 32 bit uint*/
 
         public W10(uint value)
         {
@@ -104,7 +104,7 @@ namespace Sim704
         const int wlen = 15; /* Word length */
         const uint wmask = (1U << wlen) - 1U; /* mask for word */
 
-        uint w; /* 15 bit Word stored in 32 bit uint*/
+        readonly uint w; /* 15 bit Word stored in 32 bit uint*/
 
         public W15(uint value)
         {
@@ -128,7 +128,7 @@ namespace Sim704
         const int wlen = 18; /* Word length */
         const uint wmask = (1U << wlen) - 1U; /* mask for word */
 
-        uint w; /* 18 bit Word stored in 32 bit uint*/
+        readonly uint w; /* 18 bit Word stored in 32 bit uint*/
 
         public W18(uint value)
         {
@@ -152,7 +152,7 @@ namespace Sim704
         const int wlen = 27; /* Word length */
         const uint wmask = (1U << wlen) - 1U; /* mask for word */
 
-        uint w; /* 27 bit Word stored in 32 bit uint*/
+        readonly uint w; /* 27 bit Word stored in 32 bit uint*/
 
         public W27(uint value)
         {
@@ -176,7 +176,7 @@ namespace Sim704
         const int wlen = 35; /* Word length */
         const ulong wmask = (1UL << wlen) - 1UL; /* mask for word */
 
-        ulong w; /* 35 bit Word stored in 64 bit ulong*/
+        readonly ulong w; /* 35 bit Word stored in 64 bit ulong*/
 
         public W35(ulong value)
         {
@@ -277,7 +277,7 @@ namespace Sim704
         {
             get
             {
-                return (W15)w;
+                return (W15)(uint)w;
             }
             set
             {
@@ -288,7 +288,7 @@ namespace Sim704
         {
             get
             {
-                return (W3)(w >> tpos);
+                return (W3)(uint)(w >> tpos);
             }
             set
             {
@@ -299,7 +299,7 @@ namespace Sim704
         {
             get
             {
-                return (W15)(w >> dpos);
+                return (W15)(uint)(w >> dpos);
             }
             set
             {
@@ -310,7 +310,7 @@ namespace Sim704
         {
             get
             {
-                return (W3)(w >> ppos);
+                return (W3)(uint)(w >> ppos);
             }
             set
             {
@@ -332,7 +332,7 @@ namespace Sim704
         {
             get
             {
-                return (W1)(w >> spos);
+                return (W1)(uint)(w >> spos);
             }
             set
             {
@@ -343,7 +343,7 @@ namespace Sim704
         {
             get
             {
-                return (W1)(w >> b1pos);
+                return (W1)(uint)(w >> b1pos);
             }
             set
             {
@@ -355,7 +355,7 @@ namespace Sim704
         {
             get
             {
-                return (W18)(w >> lpos);
+                return (W18)(uint)(w >> lpos);
             }
             set
             {
@@ -366,7 +366,7 @@ namespace Sim704
         {
             get
             {
-                return (W27)w;
+                return (W27)(uint)w;
             }
             set
             {
@@ -377,7 +377,7 @@ namespace Sim704
         {
             get
             {
-                return (W8)(w >> cpos);
+                return (W8)(uint)(w >> cpos);
             }
             set
             {
@@ -389,7 +389,7 @@ namespace Sim704
         {
             get
             {
-                return (W1)(w >> b9pos);
+                return (W1)(uint)(w >> b9pos);
             }
             set
             {
@@ -416,7 +416,7 @@ namespace Sim704
         const int wlen = 37; /* Word length */
         const ulong wmask = (1UL << wlen) - 1UL; /* mask for word */
 
-        ulong w; /* 37 bit Word stored in 64 bit ulong*/
+        readonly ulong w; /* 37 bit Word stored in 64 bit ulong*/
 
         public W37(ulong value)
         {
@@ -532,7 +532,7 @@ namespace Sim704
         {
             get
             {
-                return (W15)w;
+                return (W15)(uint)w;
             }
             set
             {
@@ -543,7 +543,7 @@ namespace Sim704
         {
             get
             {
-                return (W3)(w >> tpos);
+                return (W3)(uint)(w >> tpos);
             }
             set
             {
@@ -554,7 +554,7 @@ namespace Sim704
         {
             get
             {
-                return (W15)(w >> dpos);
+                return (W15)(uint)(w >> dpos);
             }
             set
             {
@@ -565,7 +565,7 @@ namespace Sim704
         {
             get
             {
-                return (W3)(w >> prpos);
+                return (W3)(uint)(w >> prpos);
             }
             set
             {
@@ -576,7 +576,7 @@ namespace Sim704
         {
             get
             {
-                return (W1)(w >> pbpos);
+                return (W1)(uint)(w >> pbpos);
             }
             set
             {
@@ -587,7 +587,7 @@ namespace Sim704
         {
             get
             {
-                return (W1)(w >> qpos);
+                return (W1)(uint)(w >> qpos);
             }
             set
             {
@@ -631,7 +631,7 @@ namespace Sim704
         {
             get
             {
-                return (W1)(w >> spos);
+                return (W1)(uint)(w >> spos);
             }
             set
             {
@@ -642,7 +642,7 @@ namespace Sim704
         {
             get
             {
-                return (W27)w;
+                return (W27)(uint)w;
             }
             set
             {
@@ -653,7 +653,7 @@ namespace Sim704
         {
             get
             {
-                return (W10)(w >> c10pos);
+                return (W10)(uint)(w >> c10pos);
             }
             set
             {
@@ -664,7 +664,7 @@ namespace Sim704
         {
             get
             {
-                return (W1)(w >> b9pos);
+                return (W1)(uint)(w >> b9pos);
             }
             set
             {
@@ -702,7 +702,7 @@ namespace Sim704
     {
         static uint wmask; /* mask for word */
         public static int olen; /* octal lenght */
-        uint w; /* N bit Word stored in 32 bit uint*/
+        readonly uint w; /* N bit Word stored in 32 bit uint*/
 
         public static void SetMask(uint AddressMask)
         {
@@ -738,7 +738,7 @@ namespace Sim704
         public static WA ILC; /* Instruction Counter */
         public static WA NIC; /* Next Instruction Counter for Transfer*/
         public static W36 SR; /* Storage register */
-        static WA[] X = new WA[3]; /* Index Register */
+        readonly static WA[] X = new WA[3]; /* Index Register */
         public static bool halt = false;
         static public void Clr()
         {
@@ -1118,8 +1118,8 @@ namespace Sim704
                         case 160: /*240*/
                             if (splus) /*+240 FDH Floating Divide or HALT*/
                             {
-                                halt = ALU.FDH(GetY());
                                 DebugAT("FDH");
+                                halt = ALU.FDH(GetY());
                                 inst = true;
                             }
                             break;
@@ -1245,7 +1245,7 @@ namespace Sim704
                             if (splus) /*+460 LDA Locate Drum Address*/
                             {
                                 DebugAT("LDA");
-                                Io704.LDA((uint)LoadCY());
+                                Io704.LDA((uint)(ulong)LoadCY());
                                 inst = true;
                             }
                             break;
@@ -1686,7 +1686,7 @@ namespace Sim704
             Io704.RDS(13 * 16 + 1);
             Io704.CPY(ref CoreMemory.Mem[0]);
             Io704.CPY(ref CoreMemory.Mem[1]);
-            ALU.MQ = new W36();
+            ALU.MQ = new W36(CoreMemory.Mem[1]);
             ILC = (WA)0;
             Go();
         }
@@ -1696,7 +1696,7 @@ namespace Sim704
             Io704.RDS(9 * 16 + 1);
             Io704.CPY(ref CoreMemory.Mem[0]);
             Io704.CPY(ref CoreMemory.Mem[1]);
-            ALU.MQ = new W36();
+            ALU.MQ = new W36(CoreMemory.Mem[1]);
             ILC = (WA)0;
             Go();
         }
@@ -1705,7 +1705,7 @@ namespace Sim704
             Io704.RDS(12 * 16 + 1);
             Io704.CPY(ref CoreMemory.Mem[0]);
             Io704.CPY(ref CoreMemory.Mem[1]);
-            ALU.MQ = new W36();
+            ALU.MQ = new W36(CoreMemory.Mem[1]);
             ILC = (WA)0;
             Go();
         }
